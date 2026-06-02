@@ -1,0 +1,171 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Presensi;
+use App\Models\Pengguna;
+use App\Models\IzinCuti;
+use App\Models\RekapBulanan;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class DashboardController extends Controller
+{
+    public function stats(Request $request): JsonResponse
+    {
+        $user  = $request->user();
+        $today = Carbon::today()->toDateString();
+
+        return match ($user->role) {
+            'guru'         => $this->guruStats($user, $today),
+            'admin'        => $this->adminStats($user, $today),
+            'kepala_sekolah' => $this->kepalaStats($user, $today),
+            'yayasan'      => $this->yayasanStats($user, $today),
+            default        => response()->json(['success' => false, 'message' => 'Role tidak dikenali.'], 400),
+        };
+    }
+
+    private function guruStats(Pengguna $user, string $today): JsonResponse
+    {
+        $month   = Carbon::now()->month;
+        $year    = Carbon::now()->year;
+        $rekap   = RekapBulanan::where('pengguna_id', $user->id)
+            ->where('bulan', $month)->where('tahun', $year)->first();
+
+        $todayPresensi = Presensi::where('pengguna_id', $user->id)
+            ->whereDate('tanggal', $today)->first();
+
+        $pendingIzin = IzinCuti::where('pengguna_id', $user->id)
+            ->where('status_approval', 'pending')->count();
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'role'            => 'guru',
+                'today_presensi'  => $todayPresensi,
+                'bulan_ini'       => [
+                    'hadir'           => $rekap?->total_hadir ?? 0,
+                    'terlambat'       => $rekap?->total_terlambat ?? 0,
+                    'izin'            => $rekap?->total_izin ?? 0,
+                    'cuti'            => $rekap?->total_cuti ?? 0,
+                    'alpha'           => $rekap?->total_alpha ?? 0,
+                    'menit_terlambat' => $rekap?->total_menit_terlambat ?? 0,
+                ],
+                'pending_izin'    => $pendingIzin,
+            ],
+        ]);
+    }
+
+    private function adminStats(Pengguna $user, string $today): JsonResponse
+    {
+        $sekolahId = $user->sekolah_id;
+
+        $totalPegawai = Pengguna::where('sekolah_id', $sekolahId)->where('is_active', 1)->count();
+
+        $todayStats = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
+            ->whereDate('tanggal', $today)
+            ->select('status_kehadiran', DB::raw('count(*) as total'))
+            ->groupBy('status_kehadiran')
+            ->pluck('total', 'status_kehadiran');
+
+        $hadir     = $todayStats->get('hadir', 0) + $todayStats->get('terlambat', 0);
+        $belumHadir = $totalPegawai - $hadir - ($todayStats->get('izin', 0) + $todayStats->get('cuti', 0));
+
+        $pendingIzin = IzinCuti::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
+            ->where('status_approval', 'pending')->count();
+
+        $recentCheckins = Presensi::with('pengguna:id,nama_lengkap,foto_profil_url')
+            ->whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
+            ->whereDate('tanggal', $today)
+            ->orderByDesc('waktu_checkin')
+            ->limit(10)->get();
+
+        // Weekly trend (last 7 days)
+        $weeklyTrend = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
+            ->whereBetween('tanggal', [Carbon::now()->subDays(6)->toDateString(), $today])
+            ->select('tanggal', 'status_kehadiran', DB::raw('count(*) as total'))
+            ->groupBy('tanggal', 'status_kehadiran')
+            ->orderBy('tanggal')
+            ->get()
+            ->groupBy('tanggal');
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'role'           => 'admin',
+                'total_pegawai'  => $totalPegawai,
+                'today'          => [
+                    'hadir'      => $hadir,
+                    'terlambat'  => $todayStats->get('terlambat', 0),
+                    'izin'       => $todayStats->get('izin', 0),
+                    'cuti'       => $todayStats->get('cuti', 0),
+                    'alpha'      => $todayStats->get('alpha', 0),
+                    'belum_hadir' => max(0, $belumHadir),
+                ],
+                'pending_izin'   => $pendingIzin,
+                'recent_checkins' => $recentCheckins,
+                'weekly_trend'   => $weeklyTrend,
+            ],
+        ]);
+    }
+
+    private function kepalaStats(Pengguna $user, string $today): JsonResponse
+    {
+        $sekolahId = $user->sekolah_id;
+
+        $totalPegawai = Pengguna::where('sekolah_id', $sekolahId)->where('is_active', 1)->count();
+
+        $todayStats = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
+            ->whereDate('tanggal', $today)
+            ->select('status_kehadiran', DB::raw('count(*) as total'))
+            ->groupBy('status_kehadiran')
+            ->pluck('total', 'status_kehadiran');
+
+        $pendingIzin = IzinCuti::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
+            ->where('status_approval', 'pending')->count();
+
+        $monthStats = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
+            ->whereMonth('tanggal', now()->month)
+            ->whereYear('tanggal', now()->year)
+            ->select('status_kehadiran', DB::raw('count(*) as total'))
+            ->groupBy('status_kehadiran')
+            ->pluck('total', 'status_kehadiran');
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'role'          => 'kepala_sekolah',
+                'total_pegawai' => $totalPegawai,
+                'today'         => [
+                    'hadir'     => $todayStats->get('hadir', 0),
+                    'terlambat' => $todayStats->get('terlambat', 0),
+                    'izin'      => $todayStats->get('izin', 0),
+                    'alpha'     => $todayStats->get('alpha', 0),
+                ],
+                'bulan_ini'     => $monthStats,
+                'pending_izin'  => $pendingIzin,
+            ],
+        ]);
+    }
+
+    private function yayasanStats(Pengguna $user, string $today): JsonResponse
+    {
+        $totalSekolah  = \App\Models\Sekolah::count();
+        $totalPegawai  = Pengguna::where('is_active', 1)->whereNotNull('sekolah_id')->count();
+        $todayHadir    = Presensi::whereDate('tanggal', $today)
+            ->whereIn('status_kehadiran', ['hadir', 'terlambat'])->count();
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'role'          => 'yayasan',
+                'total_sekolah' => $totalSekolah,
+                'total_pegawai' => $totalPegawai,
+                'today_hadir'   => $todayHadir,
+            ],
+        ]);
+    }
+}

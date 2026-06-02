@@ -1,66 +1,30 @@
-@import 'tailwindcss';
-@import '../../vendor/livewire/flux/dist/flux.css';
-
-@source '../views';
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
-@source '../../vendor/livewire/flux/stubs/**/*.blade.php';
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-
-    --color-zinc-50: #fafafa;
-    --color-zinc-100: #f5f5f5;
-    --color-zinc-200: #e5e5e5;
-    --color-zinc-300: #d4d4d4;
-    --color-zinc-400: #a3a3a3;
-    --color-zinc-500: #737373;
-    --color-zinc-600: #525252;
-    --color-zinc-700: #404040;
-    --color-zinc-800: #262626;
-    --color-zinc-900: #171717;
-    --color-zinc-950: #0a0a0a;
-
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
-    --color-accent-foreground: var(--color-white);
-}
-
-@layer theme {
-    .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
-    }
-}
+@import "tailwindcss";
 
 @layer base {
-
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+    :root {
+        --primary: 220 90% 56%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 217 33% 17%;
+        --accent: 262 80% 65%;
+        --success: 142 71% 45%;
+        --warning: 38 92% 50%;
+        --danger: 0 84% 60%;
     }
-}
 
-[data-flux-field]:not(ui-radio, ui-checkbox) {
-    @apply grid gap-2;
-}
+    * {
+        box-sizing: border-box;
+    }
 
-[data-flux-label] {
-    @apply  !mb-0 !leading-tight;
-}
+    body {
+        @apply bg-slate-950 text-slate-100 font-sans antialiased;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
 
-input:focus[data-flux-control],
-textarea:focus[data-flux-control],
-select:focus[data-flux-control] {
-    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track { @apply bg-slate-900; }
+    ::-webkit-scrollbar-thumb { @apply bg-slate-600 rounded-full; }
+    ::-webkit-scrollbar-thumb:hover { @apply bg-slate-500; }
 }
-
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */

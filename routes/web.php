@@ -2,10 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+/*
+|--------------------------------------------------------------------------
+| SIPEGAS — SPA Catch-all
+| Semua request non-API dilayani oleh React SPA.
+|--------------------------------------------------------------------------
+*/
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
-});
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '^(?!api).*$');
 
-require __DIR__.'/settings.php';
