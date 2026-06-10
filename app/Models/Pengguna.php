@@ -52,7 +52,7 @@ class Pengguna extends Authenticatable
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
     public function isAdmin(): bool { return $this->role === 'admin'; }
-    public function isGuru(): bool { return $this->role === 'guru'; }
+    public function isPegawai(): bool { return $this->role === 'pegawai'; }
     public function isKepalaSekolah(): bool { return $this->role === 'kepala_sekolah'; }
     public function isYayasan(): bool { return $this->role === 'yayasan'; }
 

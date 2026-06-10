@@ -61,8 +61,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rekap Bulanan
     Route::prefix('rekap')->group(function () {
         Route::get('/', [RekapController::class, 'index']);
-        Route::get('/export/excel', [RekapController::class, 'exportExcel']);
-        Route::get('/export/pdf', [RekapController::class, 'exportPdf']);
+        Route::get('/export/excel', [RekapController::class, 'exportExcel'])
+            ->middleware('role:admin,kepala_sekolah,yayasan');
+        Route::get('/export/pdf', [RekapController::class, 'exportPdf'])
+            ->middleware('role:admin,kepala_sekolah,yayasan');
         Route::get('/detail/{penggunaId}', [RekapController::class, 'detail']);
         Route::post('/refresh', [RekapController::class, 'refresh'])
             ->middleware('role:admin');

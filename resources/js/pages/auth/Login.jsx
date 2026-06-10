@@ -25,9 +25,10 @@ export default function Login() {
     }
 
     const demoAccounts = [
-        { label: 'Admin', email: 'admin@sipegas.id', role: 'admin', color: 'blue' },
-        { label: 'Kepala', email: 'kepala@sipegas.id', role: 'kepala', color: 'violet' },
-        { label: 'Guru', email: 'andi@sipegas.id', role: 'guru', color: 'emerald' },
+        { label: 'Admin',   email: 'admin@sipegas.id',   role: 'admin',   color: 'blue'    },
+        { label: 'Kepala',  email: 'kepala@sipegas.id',  role: 'kepala',  color: 'violet'  },
+        { label: 'Guru',    email: 'andi@sipegas.id',    role: 'guru',    color: 'emerald' },
+        { label: 'Yayasan', email: 'yayasan@sipegas.id', role: 'yayasan', color: 'amber'   },
     ]
 
     return (
@@ -98,15 +99,16 @@ export default function Login() {
                 {/* Demo Accounts */}
                 <div className="mt-6 pt-5 border-t border-slate-800">
                     <p className="text-slate-500 text-xs text-center mb-3">Demo akun (password: <code className="text-slate-400">password123</code>)</p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                         {demoAccounts.map(acc => (
                             <button
                                 key={acc.email}
                                 onClick={() => setForm({ email: acc.email, password: 'password123' })}
                                 className={`px-2 py-1.5 rounded-lg text-xs font-medium border transition-all
-                                    ${acc.color === 'blue' ? 'border-blue-500/30 text-blue-400 hover:bg-blue-500/10' :
-                                    acc.color === 'violet' ? 'border-violet-500/30 text-violet-400 hover:bg-violet-500/10' :
-                                    'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'}`}
+                                    ${acc.color === 'blue'    ? 'border-blue-500/30 text-blue-400 hover:bg-blue-500/10' :
+                                      acc.color === 'violet'  ? 'border-violet-500/30 text-violet-400 hover:bg-violet-500/10' :
+                                      acc.color === 'emerald' ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10' :
+                                                                'border-amber-500/30 text-amber-400 hover:bg-amber-500/10'}`}
                             >
                                 {acc.label}
                             </button>

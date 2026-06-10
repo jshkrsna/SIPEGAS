@@ -20,15 +20,15 @@ class DashboardController extends Controller
         $today = Carbon::today()->toDateString();
 
         return match ($user->role) {
-            'guru'         => $this->guruStats($user, $today),
-            'admin'        => $this->adminStats($user, $today),
+            'pegawai'        => $this->pegawaiStats($user, $today),
+            'admin'          => $this->adminStats($user, $today),
             'kepala_sekolah' => $this->kepalaStats($user, $today),
-            'yayasan'      => $this->yayasanStats($user, $today),
-            default        => response()->json(['success' => false, 'message' => 'Role tidak dikenali.'], 400),
+            'yayasan'        => $this->yayasanStats($user, $today),
+            default          => response()->json(['success' => false, 'message' => 'Role tidak dikenali.'], 400),
         };
     }
 
-    private function guruStats(Pengguna $user, string $today): JsonResponse
+    private function pegawaiStats(Pengguna $user, string $today): JsonResponse
     {
         $month   = Carbon::now()->month;
         $year    = Carbon::now()->year;
@@ -44,7 +44,7 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'role'            => 'guru',
+                'role'            => 'pegawai',
                 'today_presensi'  => $todayPresensi,
                 'bulan_ini'       => [
                     'hadir'           => $rekap?->total_hadir ?? 0,
@@ -153,18 +153,72 @@ class DashboardController extends Controller
 
     private function yayasanStats(Pengguna $user, string $today): JsonResponse
     {
-        $totalSekolah  = \App\Models\Sekolah::count();
-        $totalPegawai  = Pengguna::where('is_active', 1)->whereNotNull('sekolah_id')->count();
-        $todayHadir    = Presensi::whereDate('tanggal', $today)
+        $sekolahList = \App\Models\Sekolah::where('is_active', 1)->get(['id', 'nama_sekolah', 'kode_sekolah']);
+
+        $totalSekolah = $sekolahList->count();
+        $totalPegawai = Pengguna::where('is_active', 1)->whereNotNull('sekolah_id')->count();
+
+        $todayHadir = Presensi::whereDate('tanggal', $today)
             ->whereIn('status_kehadiran', ['hadir', 'terlambat'])->count();
+
+        // Global attendance rate this month
+        $month = Carbon::now()->month;
+        $year  = Carbon::now()->year;
+        $totalPresensiMonth = Presensi::whereMonth('tanggal', $month)->whereYear('tanggal', $year)->count();
+        $hadirMonth = Presensi::whereMonth('tanggal', $month)->whereYear('tanggal', $year)
+            ->whereIn('status_kehadiran', ['hadir', 'terlambat'])->count();
+        $avgKehadiran = $totalPresensiMonth > 0
+            ? round(($hadirMonth / $totalPresensiMonth) * 100, 1)
+            : 0;
+
+        // Per-school comparative stats (leaderboard)
+        $perSekolah = $sekolahList->map(function ($sekolah) use ($month, $year, $today) {
+            $pegawaiIds = Pengguna::where('sekolah_id', $sekolah->id)
+                ->where('is_active', 1)->pluck('id');
+            $totalPegawai = $pegawaiIds->count();
+
+            // This month stats
+            $monthStats = Presensi::whereIn('pengguna_id', $pegawaiIds)
+                ->whereMonth('tanggal', $month)->whereYear('tanggal', $year)
+                ->select('status_kehadiran', DB::raw('count(*) as total'))
+                ->groupBy('status_kehadiran')
+                ->pluck('total', 'status_kehadiran');
+
+            $hadir     = $monthStats->get('hadir', 0) + $monthStats->get('terlambat', 0);
+            $terlambat = $monthStats->get('terlambat', 0);
+            $alpha     = $monthStats->get('alpha', 0);
+            $total     = $monthStats->sum();
+            $pctHadir  = $total > 0 ? round(($hadir / $total) * 100, 1) : 0;
+
+            // Today
+            $todayHadir = Presensi::whereIn('pengguna_id', $pegawaiIds)
+                ->whereDate('tanggal', $today)
+                ->whereIn('status_kehadiran', ['hadir', 'terlambat'])->count();
+
+            return [
+                'id'            => $sekolah->id,
+                'nama_sekolah'  => $sekolah->nama_sekolah,
+                'kode_sekolah'  => $sekolah->kode_sekolah,
+                'total_pegawai' => $totalPegawai,
+                'today_hadir'   => $todayHadir,
+                'bulan'         => [
+                    'hadir'     => $hadir,
+                    'terlambat' => $terlambat,
+                    'alpha'     => $alpha,
+                    'pct_hadir' => $pctHadir,
+                ],
+            ];
+        })->sortByDesc('bulan.pct_hadir')->values();
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'role'          => 'yayasan',
-                'total_sekolah' => $totalSekolah,
-                'total_pegawai' => $totalPegawai,
-                'today_hadir'   => $todayHadir,
+                'role'           => 'yayasan',
+                'total_sekolah'  => $totalSekolah,
+                'total_pegawai'  => $totalPegawai,
+                'today_hadir'    => $todayHadir,
+                'avg_kehadiran'  => $avgKehadiran,
+                'per_sekolah'    => $perSekolah,
             ],
         ]);
     }

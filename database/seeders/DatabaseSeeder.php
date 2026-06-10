@@ -52,9 +52,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // ── 3. Jabatan ──────────────────────────────────────────────────────
-        $jabGuru    = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Guru Mata Pelajaran', 'kode_jabatan' => 'GURU']);
-        $jabStaf    = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Staf Tata Usaha', 'kode_jabatan' => 'TU']);
-        $jabWaka    = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Wakil Kepala Sekolah', 'kode_jabatan' => 'WAKA']);
+        $jabGuru         = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Guru Mata Pelajaran',       'kode_jabatan' => 'GURU']);
+        $jabStaf         = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Staf Tata Usaha',            'kode_jabatan' => 'TU']);
+        $jabWaka         = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Wakil Kepala Sekolah',       'kode_jabatan' => 'WAKA']);
+        $jabHumas        = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Humas & Publikasi',          'kode_jabatan' => 'HUMAS']);
+        $jabLayanan      = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Layanan Pelanggan',          'kode_jabatan' => 'LPEL']);
+        $jabKebersihan   = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Penjaga Kebersihan Sekolah', 'kode_jabatan' => 'KEBERSIHAN']);
+        $jabSatpam       = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Satpam / Keamanan',          'kode_jabatan' => 'SATPAM']);
+        $jabPerpustakaan = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Pustakawan',                 'kode_jabatan' => 'PUSTAKA']);
+        $jabBK           = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Bimbingan Konseling (BK)',   'kode_jabatan' => 'BK']);
+        $jabOlahraga     = Jabatan::create(['id' => Str::uuid(), 'sekolah_id' => $sekolah->id, 'nama_jabatan' => 'Guru Olahraga',              'kode_jabatan' => 'ORKES']);
 
         // ── 4. Jam Kerja ─────────────────────────────────────────────────────
         $jamKerja = JamKerja::create([
@@ -142,9 +149,9 @@ class DatabaseSeeder extends Seeder
             ['NIP-0005', 'Eko Prasetyo, S.Pd', 'eko@sipegas.id'],
         ];
 
-        $guru = [];
+        $pegawai = [];
         foreach ($guruData as [$nip, $nama, $email]) {
-            $guru[] = Pengguna::create([
+            $pegawai[] = Pengguna::create([
                 'id'            => Str::uuid(),
                 'sekolah_id'    => $sekolah->id,
                 'jabatan_id'    => $jabGuru->id,
@@ -152,7 +159,7 @@ class DatabaseSeeder extends Seeder
                 'nama_lengkap'  => $nama,
                 'email'         => $email,
                 'password_hash' => Hash::make('password123'),
-                'role'          => 'guru',
+                'role'          => 'pegawai',
                 'qr_token'      => Str::random(32),
                 'qr_expires_at' => now()->addDay(),
                 'is_active'     => 1,
@@ -167,7 +174,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('📧 Login Credentials:');
         $this->command->info('   Admin        : admin@sipegas.id / password123');
         $this->command->info('   Kepala Sekolah: kepala@sipegas.id / password123');
-        $this->command->info('   Guru         : andi@sipegas.id / password123');
+        $this->command->info('   Pegawai      : andi@sipegas.id / password123');
         $this->command->info('   Yayasan      : yayasan@sipegas.id / password123');
     }
 }

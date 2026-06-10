@@ -127,7 +127,7 @@ export default function LaporanBulanan() {
                                         <th className="text-center px-3 py-3 text-slate-400 font-medium">I</th>
                                         <th className="text-center px-3 py-3 text-slate-400 font-medium">C</th>
                                         <th className="text-center px-3 py-3 text-slate-400 font-medium">A</th>
-                                        {user?.role !== 'guru' && <th className="text-center px-3 py-3 text-slate-400 font-medium">Detail</th>}
+                                        {user?.role !== 'pegawai' && <th className="text-center px-3 py-3 text-slate-400 font-medium">Detail</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -148,7 +148,7 @@ export default function LaporanBulanan() {
                                             <td className="px-3 py-3 text-center text-blue-400 font-medium">{r.total_izin}</td>
                                             <td className="px-3 py-3 text-center text-violet-400 font-medium">{r.total_cuti}</td>
                                             <td className="px-3 py-3 text-center text-red-400 font-medium">{r.total_alpha}</td>
-                                            {user?.role !== 'guru' && (
+                                            {user?.role !== 'pegawai' && (
                                                 <td className="px-3 py-3 text-center">
                                                     <button className="text-xs text-blue-400 hover:underline">Lihat →</button>
                                                 </td>

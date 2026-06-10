@@ -10,7 +10,7 @@ export default function ManajemenPengguna() {
     const [roleFilter, setRoleFilter] = useState('')
     const [showForm, setShowForm] = useState(false)
     const [editUser, setEditUser] = useState(null)
-    const [form, setForm] = useState({ nip: '', nama_lengkap: '', email: '', password: '', role: 'guru', jabatan_id: '' })
+    const [form, setForm] = useState({ nip: '', nama_lengkap: '', email: '', password: '', role: 'pegawai', jabatan_id: '' })
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
@@ -41,7 +41,7 @@ export default function ManajemenPengguna() {
     }, [search, roleFilter])
 
     const resetForm = () => {
-        setForm({ nip: '', nama_lengkap: '', email: '', password: '', role: 'guru', jabatan_id: '' })
+        setForm({ nip: '', nama_lengkap: '', email: '', password: '', role: 'pegawai', jabatan_id: '' })
         setEditUser(null)
         setError('')
     }
@@ -83,8 +83,15 @@ export default function ManajemenPengguna() {
         } catch {}
     }
 
+    const ROLE_LABELS = {
+        pegawai: 'Pegawai',
+        admin: 'Administrator',
+        kepala_sekolah: 'Kepala Sekolah',
+        yayasan: 'Yayasan',
+    }
+
     const ROLE_STYLES = {
-        guru: 'bg-emerald-500/20 text-emerald-400',
+        pegawai: 'bg-emerald-500/20 text-emerald-400',
         admin: 'bg-blue-500/20 text-blue-400',
         kepala_sekolah: 'bg-violet-500/20 text-violet-400',
         yayasan: 'bg-amber-500/20 text-amber-400',
@@ -131,8 +138,8 @@ export default function ManajemenPengguna() {
                             <label className="block text-slate-400 text-xs uppercase tracking-wide mb-1.5">Role</label>
                             <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
                                 className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                                {['guru', 'admin', 'kepala_sekolah'].map(r => (
-                                    <option key={r} value={r} className="capitalize">{r.replace('_', ' ')}</option>
+                                {['pegawai', 'admin', 'kepala_sekolah'].map(r => (
+                                    <option key={r} value={r}>{ROLE_LABELS[r] || r}</option>
                                 ))}
                             </select>
                         </div>
@@ -164,8 +171,8 @@ export default function ManajemenPengguna() {
                 <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
                     className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                     <option value="">Semua Role</option>
-                    {['guru', 'admin', 'kepala_sekolah'].map(r => (
-                        <option key={r} value={r} className="capitalize">{r.replace('_', ' ')}</option>
+                    {['pegawai', 'admin', 'kepala_sekolah'].map(r => (
+                        <option key={r} value={r}>{ROLE_LABELS[r] || r}</option>
                     ))}
                 </select>
             </div>
@@ -205,8 +212,8 @@ export default function ManajemenPengguna() {
                                         </td>
                                         <td className="px-4 py-3 text-slate-400 font-mono text-xs">{u.nip}</td>
                                         <td className="px-4 py-3">
-                                            <span className={`px-2 py-1 rounded-full text-xs capitalize ${ROLE_STYLES[u.role]}`}>
-                                                {u.role?.replace('_', ' ')}
+                                            <span className={`px-2 py-1 rounded-full text-xs ${ROLE_STYLES[u.role]}`}>
+                                                {ROLE_LABELS[u.role] || u.role}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-slate-400 text-xs">{u.jabatan?.nama_jabatan || '—'}</td>

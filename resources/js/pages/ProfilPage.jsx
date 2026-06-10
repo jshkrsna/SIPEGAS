@@ -25,7 +25,7 @@ export default function ProfilPage() {
     const fileInputRef = useRef(null)
 
     const roleLabel = {
-        guru: 'Guru',
+        pegawai: 'Pegawai',
         admin: 'Administrator',
         kepala_sekolah: 'Kepala Sekolah',
         yayasan: 'Yayasan'

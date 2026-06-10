@@ -36,6 +36,7 @@ class RekapController extends Controller
         } elseif ($user->isAdmin() || $user->isKepalaSekolah()) {
             $query->whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $user->sekolah_id));
         }
+        // yayasan → no additional filter (sees all schools)
 
         $data = $query->orderBy(function ($q) {
             $q->from('pengguna')->select('nama_lengkap')

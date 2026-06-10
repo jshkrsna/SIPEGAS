@@ -1,15 +1,16 @@
 import React, { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { usePageTransition, useNavHover } from '../utils/usePageTransition'
 
 const navItems = {
-    guru: [
-        { to: '/dashboard', icon: '', label: 'Dashboard' },
-        { to: '/presensi', icon: '', label: 'Presensi' },
-        { to: '/presensi/riwayat', icon: '', label: 'Riwayat' },
-        { to: '/presensi/kalender', icon: '', label: 'Kalender' },
-        { to: '/izin', icon: '', label: 'Izin / Cuti' },
-        { to: '/laporan', icon: '', label: 'Laporan' },
+    pegawai: [
+        { to: '/dashboard', icon: '🏠', label: 'Dashboard' },
+        { to: '/presensi', icon: '📍', label: 'Presensi' },
+        { to: '/presensi/riwayat', icon: '📋', label: 'Riwayat' },
+        { to: '/presensi/kalender', icon: '📅', label: 'Kalender' },
+        { to: '/izin', icon: '📝', label: 'Izin / Cuti' },
+        { to: '/laporan', icon: '📊', label: 'Laporan' },
     ],
     admin: [
         { to: '/dashboard', icon: '', label: 'Dashboard' },
@@ -36,14 +37,14 @@ const navItems = {
 }
 
 const roleLabel = {
-    guru: 'Guru',
+    pegawai: 'Pegawai',
     admin: 'Administrator',
     kepala_sekolah: 'Kepala Sekolah',
     yayasan: 'Yayasan',
 }
 
 const roleBadgeColor = {
-    guru: 'bg-emerald-500/20 text-emerald-400',
+    pegawai: 'bg-emerald-500/20 text-emerald-400',
     admin: 'bg-blue-500/20 text-blue-400',
     kepala_sekolah: 'bg-violet-500/20 text-violet-400',
     yayasan: 'bg-amber-500/20 text-amber-400',
@@ -54,8 +55,10 @@ export default function DashboardLayout() {
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [loggingOut, setLoggingOut] = useState(false)
+    const pageRef = usePageTransition()
+    const navHover = useNavHover()
 
-    const items = navItems[user?.role] || navItems.guru
+    const items = navItems[user?.role] || navItems.pegawai
 
     const handleLogout = async () => {
         setLoggingOut(true)
@@ -103,8 +106,9 @@ export default function DashboardLayout() {
                         to={item.to}
                         end={item.to === '/dashboard'}
                         onClick={() => mobile && setSidebarOpen(false)}
+                        {...navHover}
                         className={({ isActive }) =>
-                            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${isActive
+                            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${isActive
                                 ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
                                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                             }`
@@ -174,7 +178,9 @@ export default function DashboardLayout() {
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-y-auto">
-                    <Outlet />
+                    <div ref={pageRef}>
+                        <Outlet />
+                    </div>
                 </main>
             </div>
         </div>
