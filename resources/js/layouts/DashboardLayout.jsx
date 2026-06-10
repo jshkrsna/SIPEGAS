@@ -4,34 +4,34 @@ import { useAuth } from '../contexts/AuthContext'
 
 const navItems = {
     guru: [
-        { to: '/dashboard', icon: '🏠', label: 'Dashboard' },
-        { to: '/presensi', icon: '📍', label: 'Presensi' },
-        { to: '/presensi/riwayat', icon: '📋', label: 'Riwayat' },
-        { to: '/presensi/kalender', icon: '📅', label: 'Kalender' },
-        { to: '/izin', icon: '📝', label: 'Izin / Cuti' },
-        { to: '/laporan', icon: '📊', label: 'Laporan' },
+        { to: '/dashboard', icon: '', label: 'Dashboard' },
+        { to: '/presensi', icon: '', label: 'Presensi' },
+        { to: '/presensi/riwayat', icon: '', label: 'Riwayat' },
+        { to: '/presensi/kalender', icon: '', label: 'Kalender' },
+        { to: '/izin', icon: '', label: 'Izin / Cuti' },
+        { to: '/laporan', icon: '', label: 'Laporan' },
     ],
     admin: [
-        { to: '/dashboard', icon: '🏠', label: 'Dashboard' },
-        { to: '/presensi/riwayat', icon: '📋', label: 'Data Presensi' },
-        { to: '/qr-generator', icon: '🔲', label: 'Generate QR' },
-        { to: '/izin/approval', icon: '✅', label: 'Approval Izin' },
-        { to: '/pengguna', icon: '👥', label: 'Pengguna' },
-        { to: '/laporan', icon: '📊', label: 'Laporan' },
-        { to: '/settings/jam-kerja', icon: '⏰', label: 'Jam Kerja' },
-        { to: '/settings/hari-libur', icon: '🗓️', label: 'Hari Libur' },
-        { to: '/settings/gps', icon: '📡', label: 'Lokasi GPS' },
+        { to: '/dashboard', icon: '', label: 'Dashboard' },
+        { to: '/presensi/riwayat', icon: '', label: 'Data Presensi' },
+        { to: '/qr-generator', icon: '', label: 'Generate QR' },
+        { to: '/izin/approval', icon: '', label: 'Approval Izin' },
+        { to: '/pengguna', icon: '', label: 'Pengguna' },
+        { to: '/laporan', icon: '', label: 'Laporan' },
+        { to: '/settings/jam-kerja', icon: '', label: 'Jam Kerja' },
+        { to: '/settings/hari-libur', icon: '', label: 'Hari Libur' },
+        { to: '/settings/gps', icon: '', label: 'Lokasi GPS' },
     ],
     kepala_sekolah: [
-        { to: '/dashboard', icon: '🏠', label: 'Dashboard' },
-        { to: '/presensi/riwayat', icon: '📋', label: 'Data Presensi' },
-        { to: '/qr-generator', icon: '🔲', label: 'Generate QR' },
-        { to: '/izin/approval', icon: '✅', label: 'Approval Izin' },
-        { to: '/laporan', icon: '📊', label: 'Laporan' },
+        { to: '/dashboard', icon: '', label: 'Dashboard' },
+        { to: '/presensi/riwayat', icon: '', label: 'Data Presensi' },
+        { to: '/qr-generator', icon: '', label: 'Generate QR' },
+        { to: '/izin/approval', icon: '', label: 'Approval Izin' },
+        { to: '/laporan', icon: '', label: 'Laporan' },
     ],
     yayasan: [
-        { to: '/dashboard', icon: '🏠', label: 'Dashboard' },
-        { to: '/laporan', icon: '📊', label: 'Laporan' },
+        { to: '/dashboard', icon: '', label: 'Dashboard' },
+        { to: '/laporan', icon: '', label: 'Laporan' },
     ],
 }
 
@@ -76,7 +76,7 @@ export default function DashboardLayout() {
 
             {/* User info */}
             <div className="px-4 py-4 border-b border-slate-800">
-                <NavLink to="/profil" onClick={() => mobile && setSidebarOpen(false)} className={({ isActive }) => 
+                <NavLink to="/profil" onClick={() => mobile && setSidebarOpen(false)} className={({ isActive }) =>
                     `flex items-center gap-3 p-3 rounded-xl transition-all ${isActive ? 'bg-blue-600/20 border border-blue-500/30' : 'bg-slate-800/50 hover:bg-slate-800 border border-transparent hover:border-slate-700'}`
                 }>
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
@@ -104,10 +104,9 @@ export default function DashboardLayout() {
                         end={item.to === '/dashboard'}
                         onClick={() => mobile && setSidebarOpen(false)}
                         className={({ isActive }) =>
-                            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
-                                isActive
-                                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${isActive
+                                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                             }`
                         }
                     >
@@ -122,9 +121,9 @@ export default function DashboardLayout() {
                 <button
                     onClick={handleLogout}
                     disabled={loggingOut}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
+                    className="border border-red-500 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-700 hover:text-white hover:bg-red-500 transition-all duration-150 cursor-pointer"
                 >
-                    <span className="text-base">🚪</span>
+                    {/* <span className="text-base">🚪</span> */}
                     {loggingOut ? 'Keluar...' : 'Keluar'}
                 </button>
             </div>
