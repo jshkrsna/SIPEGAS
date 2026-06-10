@@ -15,10 +15,10 @@ return new class extends Migration
             $table->date('tanggal');
             $table->timestamp('waktu_checkin')->nullable();
             $table->timestamp('waktu_checkout')->nullable()->comment('NULL sampai guru checkout');
-            $table->enum('metode_checkin', ['qr_code', 'geolocation', 'manual'])->default('qr_code');
+            $table->enum('metode_checkin', ['qr_code', 'geolocation', 'face', 'manual'])->default('qr_code');
             $table->enum('status_kehadiran', ['hadir', 'terlambat', 'izin', 'cuti', 'alpha'])->default('hadir');
             $table->smallInteger('terlambat_menit')->default(0)->comment('0 jika tepat waktu');
-            $table->string('selfie_checkin_url', 500)->comment('WAJIB — realtime kamera, bukan galeri');
+            $table->string('selfie_checkin_url', 500)->nullable()->comment('Selfie wajah — null jika metode QR tanpa foto');
             $table->string('selfie_checkout_url', 500)->nullable()->comment('NULL sampai checkout');
             $table->text('keterangan')->nullable()->comment('Catatan admin saat koreksi manual');
             $table->timestamp('created_at')->useCurrent();

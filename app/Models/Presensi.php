@@ -33,15 +33,25 @@ class Presensi extends Model
     public function jamKerja() { return $this->belongsTo(JamKerja::class, 'jam_kerja_id'); }
     public function gpsLog() { return $this->hasOne(GpsLog::class, 'presensi_id'); }
 
-    public function getStatusBadgeAttribute(): string
+    public function getMetodeAttribute(): ?string
     {
-        return match ($this->status_kehadiran) {
-            'hadir'     => 'success',
-            'terlambat' => 'warning',
-            'izin'      => 'info',
-            'cuti'      => 'primary',
-            'alpha'     => 'danger',
-            default     => 'secondary',
-        };
+        return $this->metode_checkin;
     }
+
+    public function getSelfieUrlAttribute(): ?string
+    {
+        return $this->selfie_checkin_url;
+    }
+
+    public function getLatCheckinAttribute(): ?string
+    {
+        return $this->gpsLog?->lat_checkin;
+    }
+
+    public function getLngCheckinAttribute(): ?string
+    {
+        return $this->gpsLog?->lng_checkin;
+    }
+
+    protected $appends = ['metode', 'selfie_url', 'lat_checkin', 'lng_checkin'];
 }

@@ -21,10 +21,14 @@ class PresensiController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user  = $request->user();
-        $query = Presensi::with(['pengguna:id,nama_lengkap,nip,foto_profil_url', 'jamKerja:id,nama_shift,jam_masuk,jam_pulang']);
+        $query = Presensi::with([
+            'pengguna:id,nama_lengkap,nip,foto_profil_url',
+            'jamKerja:id,nama_shift,jam_masuk,jam_pulang',
+            'gpsLog:id,presensi_id,lat_checkin,lng_checkin,accuracy_meter',
+        ]);
 
-        // Guru only sees own data
-        if ($user->isGuru()) {
+        // Pegawai only sees own data
+        if ($user->isPegawai()) {
             $query->where('pengguna_id', $user->id);
         } elseif ($user->isAdmin() || $user->isKepalaSekolah()) {
             // filter by sekolah
@@ -44,6 +48,14 @@ class PresensiController extends Controller
             $query->where('pengguna_id', $request->pengguna_id);
         }
 
+        if ($request->filled('is_luar_radius')) {
+            $query->where('is_luar_radius', $request->boolean('is_luar_radius'));
+        }
+        
+        if ($request->filled('status_approval_remote')) {
+            $query->where('status_approval_remote', $request->status_approval_remote);
+        }
+
         $data = $query->orderByDesc('tanggal')->paginate($request->get('per_page', 20));
 
         return response()->json(['success' => true, 'data' => $data]);
@@ -58,13 +70,23 @@ class PresensiController extends Controller
             'lat'              => 'required|numeric',
             'lng'              => 'required|numeric',
             'accuracy_meter'   => 'required|numeric',
-            'selfie_url'       => 'required|string',
-            'metode'           => 'in:qr_code,geolocation,manual',
+            'selfie_url'       => 'nullable|string',   // Optional — required for 'face', optional for 'qr_code'
+            'metode'           => 'in:qr_code,geolocation,face,manual',
             'qr_token'         => 'nullable|string',
             'ip_address'       => 'nullable|ip',
             'is_mock_detected' => 'nullable|boolean',
             'risk_score'       => 'nullable|integer|min:0|max:100',
+            'is_luar_radius'   => 'nullable|boolean',
+            'bukti_luar_radius'=> 'nullable|string',
+            'keterangan'       => 'nullable|string',
         ]);
+
+        $metode = $request->get('metode', 'qr_code');
+
+        // Face mode requires selfie
+        if ($metode === 'face' && !$request->filled('selfie_url')) {
+            return response()->json(['success' => false, 'message' => 'Foto wajah wajib disertakan untuk metode pengenalan wajah.'], 422);
+        }
 
         $user  = $request->user();
         $today = Carbon::today()->toDateString();
@@ -80,7 +102,7 @@ class PresensiController extends Controller
         }
 
         // Validate QR token if method is qr_code
-        if ($request->metode === 'qr_code') {
+        if ($metode === 'qr_code') {
             if (!$request->filled('qr_token')) {
                 return response()->json(['success' => false, 'message' => 'QR token wajib disertakan untuk metode ini.'], 422);
             }
@@ -108,6 +130,15 @@ class PresensiController extends Controller
                 (float) $gpsRef->lat, (float) $gpsRef->lng
             );
             $inRadius = $distance <= $gpsRef->radius_meter;
+
+            // Jika diluar radius 20m dan belum ada status luar radius
+            if ($distance > 20 && !$request->boolean('is_luar_radius')) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'LUAR_RADIUS',
+                    'message' => 'Anda berada di luar radius sekolah (> 20m). Silakan lengkapi form bukti bekerja jarak jauh.'
+                ], 428); // Precondition Required
+            }
         }
 
         if (! $inRadius) {
@@ -141,17 +172,34 @@ class PresensiController extends Controller
             $status         = 'terlambat';
         }
 
+        // Save Base64 Images as files
+        $selfiePath = null;
+        if ($request->filled('selfie_url') && str_starts_with($request->selfie_url, 'data:image')) {
+            $selfiePath = $this->saveBase64Image($request->selfie_url, 'selfies');
+        } else {
+            $selfiePath = $request->selfie_url; // fallback if already url
+        }
+
+        $buktiPath = null;
+        if ($request->filled('bukti_luar_radius') && str_starts_with($request->bukti_luar_radius, 'data:image')) {
+            $buktiPath = $this->saveBase64Image($request->bukti_luar_radius, 'bukti_remote');
+        }
+
         DB::beginTransaction();
         try {
             $presensi = Presensi::create([
-                'pengguna_id'       => $user->id,
-                'jam_kerja_id'      => $jamKerja->id,
-                'tanggal'           => $today,
-                'waktu_checkin'     => $now,
-                'metode_checkin'    => $request->get('metode', 'qr_code'),
-                'status_kehadiran'  => $status,
-                'terlambat_menit'   => $terlambatMenit,
-                'selfie_checkin_url' => $request->selfie_url,
+                'pengguna_id'        => $user->id,
+                'jam_kerja_id'       => $jamKerja->id,
+                'tanggal'            => $today,
+                'waktu_checkin'      => $now,
+                'metode_checkin'     => $metode,
+                'status_kehadiran'   => $status,
+                'terlambat_menit'    => $terlambatMenit,
+                'selfie_checkin_url' => $selfiePath,
+                'is_luar_radius'     => $request->boolean('is_luar_radius'),
+                'bukti_luar_radius_url' => $buktiPath,
+                'status_approval_remote'=> $request->boolean('is_luar_radius') ? 'pending' : null,
+                'keterangan'         => $request->keterangan,
             ]);
 
             GpsLog::create([
@@ -231,9 +279,16 @@ class PresensiController extends Controller
             ], 404);
         }
 
+        $selfiePath = null;
+        if ($request->filled('selfie_url') && str_starts_with($request->selfie_url, 'data:image')) {
+            $selfiePath = $this->saveBase64Image($request->selfie_url, 'selfies');
+        } else {
+            $selfiePath = $request->selfie_url; // fallback if already url
+        }
+
         $presensi->update([
             'waktu_checkout'      => now(),
-            'selfie_checkout_url' => $request->selfie_url,
+            'selfie_checkout_url' => $selfiePath,
         ]);
 
         return response()->json([
@@ -264,7 +319,9 @@ class PresensiController extends Controller
     {
         $request->validate([
             'status_kehadiran' => 'required|in:hadir,terlambat,izin,cuti,alpha',
-            'keterangan'       => 'required|string',
+            'waktu_checkin'    => 'nullable|date_format:Y-m-d H:i:s',
+            'waktu_checkout'   => 'nullable|date_format:Y-m-d H:i:s',
+            'keterangan'       => 'nullable|string|max:1000',
         ]);
 
         $presensi = Presensi::findOrFail($id);
@@ -272,7 +329,9 @@ class PresensiController extends Controller
 
         $presensi->update([
             'status_kehadiran' => $request->status_kehadiran,
-            'keterangan'       => $request->keterangan,
+            'waktu_checkin'    => $request->waktu_checkin,
+            'waktu_checkout'   => $request->waktu_checkout,
+            'keterangan'       => ltrim($presensi->keterangan . "\n[Koreksi Admin]: " . $request->keterangan, "\n"),
         ]);
 
         // Audit trail
@@ -302,14 +361,61 @@ class PresensiController extends Controller
     }
 
     /**
+     * POST /api/presensi/{id}/approve-remote
+     */
+    public function approveRemote(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'action' => 'required|in:approved,rejected',
+        ]);
+
+        $presensi = Presensi::findOrFail($id);
+
+        if (!$presensi->is_luar_radius || $presensi->status_approval_remote !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Presensi ini bukan presensi jarak jauh atau sudah diproses.'], 400);
+        }
+
+        $presensi->update([
+            'status_approval_remote' => $request->action,
+            'keterangan' => ltrim($presensi->keterangan . "\n[Approval Jarak Jauh]: " . ucfirst($request->action) . " oleh " . $request->user()->nama_lengkap, "\n"),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Presensi jarak jauh berhasil diproses.',
+            'data' => $presensi
+        ]);
+    }
+
+    /**
      * Haversine distance formula (meters)
      */
-    private function haversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
+    private function haversineDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
-        $R    = 6371000; // Earth radius in meters
+        $earthRadius = 6371000; // in meters
         $dLat = deg2rad($lat2 - $lat1);
-        $dLng = deg2rad($lng2 - $lng1);
-        $a    = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
-        return $R * 2 * atan2(sqrt($a), sqrt(1 - $a));
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $earthRadius * $c;
+    }
+
+    private function saveBase64Image(string $base64String, string $folder): string
+    {
+        // Extract base64 part
+        @list($type, $file_data) = explode(';', $base64String);
+        @list(, $file_data)      = explode(',', $file_data);
+
+        // Decode
+        $imageName = \Illuminate\Support\Str::random(40) . '.jpg';
+        $path = $folder . '/' . $imageName;
+        
+        \Illuminate\Support\Facades\Storage::disk('public')->put($path, base64_decode($file_data));
+        
+        return '/storage/' . $path;
     }
 }

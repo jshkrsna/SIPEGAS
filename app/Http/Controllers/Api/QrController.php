@@ -12,7 +12,7 @@ class QrController extends Controller
 {
     /**
      * GET /api/qr/generate
-     * Menghasilkan token dinamis untuk sekolah tertentu. Berlaku 5 menit.
+     * Menghasilkan token dinamis untuk sekolah tertentu. Berlaku 10 menit.
      */
     public function generate(Request $request): JsonResponse
     {
@@ -32,17 +32,17 @@ class QrController extends Controller
         $token = Str::random(32);
         
         // Simpan token ke Cache dengan nama key khusus untuk sekolah ini
-        // TTL (Time To Live): 5 menit
+        // TTL (Time To Live): 10 menit
         $cacheKey = "qr_sekolah_{$sekolahId}";
-        Cache::put($cacheKey, $token, now()->addMinutes(5));
+        Cache::put($cacheKey, $token, now()->addMinutes(10));
 
         return response()->json([
             'success' => true,
             'message' => 'QR token berhasil digenerate.',
             'data' => [
-                'token' => $token,
-                'expires_in_seconds' => 300, // 5 menit
-                'sekolah_id' => $sekolahId
+                'token'            => $token,
+                'expires_in_seconds' => 600, // 10 menit
+                'sekolah_id'       => $sekolahId
             ]
         ]);
     }

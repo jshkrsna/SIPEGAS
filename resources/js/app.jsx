@@ -10,6 +10,7 @@ import RiwayatPresensi from './pages/presensi/RiwayatPresensi'
 import KalenderPresensi from './pages/presensi/KalenderPresensi'
 import PengajuanIzin from './pages/izin/PengajuanIzin'
 import ApprovalIzin from './pages/izin/ApprovalIzin'
+import ApprovalJarakJauh from './pages/admin/ApprovalJarakJauh'
 import ManajemenPengguna from './pages/admin/ManajemenPengguna'
 import LaporanBulanan from './pages/laporan/LaporanBulanan'
 import JamKerjaPage from './pages/settings/JamKerjaPage'
@@ -66,6 +67,11 @@ export default function App() {
                 <Route path="/izin/approval" element={
                     <PrivateRoute roles={['admin', 'kepala_sekolah']}>
                         <ApprovalIzin />
+                    </PrivateRoute>
+                } />
+                <Route path="/presensi/approval-jarak-jauh" element={
+                    <PrivateRoute roles={['admin', 'kepala_sekolah']}>
+                        <ApprovalJarakJauh />
                     </PrivateRoute>
                 } />
                 <Route path="/laporan" element={<LaporanBulanan />} />

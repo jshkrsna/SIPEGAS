@@ -44,6 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin only
         Route::patch('/{id}/koreksi', [PresensiController::class, 'koreksi'])
             ->middleware('role:admin,kepala_sekolah');
+        Route::post('/{id}/approve-remote', [PresensiController::class, 'approveRemote'])
+            ->middleware('role:admin,kepala_sekolah');
     });
 
     // Izin / Cuti
