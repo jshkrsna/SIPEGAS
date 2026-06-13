@@ -20,6 +20,13 @@
     <!-- Vite Assets -->
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
+
+    <!-- Theme Initialization Script -->
+    <script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.add('theme-light');
+        }
+    </script>
 </head>
 <body>
     <div id="app"></div>

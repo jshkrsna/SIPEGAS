@@ -114,41 +114,10 @@ class DashboardController extends Controller
 
     private function kepalaStats(Pengguna $user, string $today): JsonResponse
     {
-        $sekolahId = $user->sekolah_id;
-
-        $totalPegawai = Pengguna::where('sekolah_id', $sekolahId)->where('is_active', 1)->count();
-
-        $todayStats = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
-            ->whereDate('tanggal', $today)
-            ->select('status_kehadiran', DB::raw('count(*) as total'))
-            ->groupBy('status_kehadiran')
-            ->pluck('total', 'status_kehadiran');
-
-        $pendingIzin = IzinCuti::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
-            ->where('status_approval', 'pending')->count();
-
-        $monthStats = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
-            ->whereMonth('tanggal', now()->month)
-            ->whereYear('tanggal', now()->year)
-            ->select('status_kehadiran', DB::raw('count(*) as total'))
-            ->groupBy('status_kehadiran')
-            ->pluck('total', 'status_kehadiran');
-
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'role'          => 'kepala_sekolah',
-                'total_pegawai' => $totalPegawai,
-                'today'         => [
-                    'hadir'     => $todayStats->get('hadir', 0),
-                    'terlambat' => $todayStats->get('terlambat', 0),
-                    'izin'      => $todayStats->get('izin', 0),
-                    'alpha'     => $todayStats->get('alpha', 0),
-                ],
-                'bulan_ini'     => $monthStats,
-                'pending_izin'  => $pendingIzin,
-            ],
-        ]);
+        $response = $this->adminStats($user, $today);
+        $data = $response->getData(true);
+        $data['data']['role'] = 'kepala_sekolah';
+        return response()->json($data);
     }
 
     private function yayasanStats(Pengguna $user, string $today): JsonResponse

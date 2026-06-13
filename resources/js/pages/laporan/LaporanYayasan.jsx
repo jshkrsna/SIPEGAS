@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios'
+import gsap from 'gsap'
 
 export default function LaporanYayasan() {
     const [sekolah, setSekolah] = useState([])
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
+    const containerRef = useRef(null)
 
     useEffect(() => {
         const fetchSekolah = async () => {
@@ -21,8 +23,20 @@ export default function LaporanYayasan() {
         fetchSekolah()
     }, [])
 
+    useEffect(() => {
+        if (!loading && sekolah.length > 0) {
+            const ctx = gsap.context(() => {
+                gsap.fromTo('.sekolah-card', 
+                    { opacity: 0, y: 20 }, 
+                    { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: 'back.out(1.5)' }
+                )
+            }, containerRef)
+            return () => ctx.revert()
+        }
+    }, [loading, sekolah])
+
     return (
-        <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <div ref={containerRef} className="p-6 max-w-5xl mx-auto space-y-6">
             <div>
                 <h2 className="text-2xl font-bold text-white">Laporan Presensi Sekolah</h2>
                 <p className="text-slate-400 text-sm mt-1">Pilih sekolah untuk melihat data presensi dan mengunduh rekapan.</p>
@@ -43,7 +57,7 @@ export default function LaporanYayasan() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {sekolah.map(s => (
                         <div key={s.id} onClick={() => navigate(`/presensi/riwayat?sekolah_id=${s.id}`)}
-                            className="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-blue-500/50 hover:bg-slate-800/50 transition-all cursor-pointer group">
+                            className="sekolah-card bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-blue-500/50 hover:bg-slate-800/50 transition-all cursor-pointer group">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                                     🏫

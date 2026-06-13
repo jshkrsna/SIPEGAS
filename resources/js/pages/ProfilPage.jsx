@@ -15,6 +15,9 @@ export default function ProfilPage() {
     
     const [submitting, setSubmitting] = useState(false)
     const [msg, setMsg] = useState({ type: '', text: '' })
+    
+    // Theme State
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
 
     // Avatar Upload & Crop State
     const [imageSrc, setImageSrc] = useState(null)
@@ -29,6 +32,16 @@ export default function ProfilPage() {
         admin: 'Administrator',
         kepala_sekolah: 'Kepala Sekolah',
         yayasan: 'Yayasan'
+    }
+
+    const toggleTheme = (newTheme) => {
+        setTheme(newTheme)
+        localStorage.setItem('theme', newTheme)
+        if (newTheme === 'light') {
+            document.documentElement.classList.add('theme-light')
+        } else {
+            document.documentElement.classList.remove('theme-light')
+        }
     }
 
     const handleChangePassword = async (e) => {
@@ -216,6 +229,35 @@ export default function ProfilPage() {
                             </div>
                         </form>
                     </div>
+            </div>
+
+            {/* Theme Settings */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                    </div>
+                    <div>
+                        <h3 className="text-white font-semibold">Pengaturan Tampilan</h3>
+                        <p className="text-slate-400 text-sm">Sesuaikan tema aplikasi (Gelap/Terang).</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4 mt-6">
+                    <button 
+                        onClick={() => toggleTheme('dark')}
+                        className={`flex-1 flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${theme === 'dark' ? 'bg-blue-600/20 border-blue-500/50 text-blue-400 ring-1 ring-blue-500/50' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'}`}
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                        <span className="font-medium text-sm">Gelap (Default)</span>
+                    </button>
+                    <button 
+                        onClick={() => toggleTheme('light')}
+                        className={`flex-1 flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${theme === 'light' ? 'bg-blue-600/20 border-blue-500/50 text-blue-400 ring-1 ring-blue-500/50' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'}`}
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <span className="font-medium text-sm">Terang</span>
+                    </button>
                 </div>
             </div>
 

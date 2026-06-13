@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../api/axios'
+import gsap from 'gsap'
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
@@ -28,12 +29,12 @@ function StatCard({ label, value, icon, color = 'blue', sub }) {
         amber:  'from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-400',
     }
     return (
-        <div className={`bg-gradient-to-br ${colors[color]} border rounded-xl p-5 flex items-center gap-4`}>
-            <span className="text-3xl">{icon}</span>
-            <div>
-                <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">{label}</p>
+        <div className={`bg-gradient-to-br ${colors[color]} border rounded-xl p-4 flex items-center gap-3 h-full`}>
+            <span className="text-3xl flex-shrink-0">{icon}</span>
+            <div className="min-w-0 flex-1">
+                <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider truncate" title={label}>{label}</p>
                 <p className="text-white text-2xl font-bold mt-0.5">{value ?? '—'}</p>
-                {sub && <p className="text-slate-500 text-xs mt-0.5">{sub}</p>}
+                {sub && <p className="text-slate-500 text-[11px] mt-0.5 truncate" title={sub}>{sub}</p>}
             </div>
         </div>
     )
@@ -41,6 +42,18 @@ function StatCard({ label, value, icon, color = 'blue', sub }) {
 
 // ─── Guru Dashboard ───────────────────────────────────────────────────────────
 function GuruDashboard({ data }) {
+    const containerRef = useRef(null)
+
+    useEffect(() => {
+        const ctx = gsap.context(() => {
+            gsap.fromTo('.dashboard-item', 
+                { opacity: 0, y: 30 }, 
+                { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power3.out' }
+            )
+        }, containerRef)
+        return () => ctx.revert()
+    }, [data])
+
     const b = data.bulan_ini
     const today = data.today_presensi
     const pieData = [
@@ -52,9 +65,9 @@ function GuruDashboard({ data }) {
     ].filter(d => d.value > 0)
 
     return (
-        <div className="space-y-6">
+        <div ref={containerRef} className="space-y-6">
             {/* Today Status */}
-            <div className={`rounded-xl p-5 border flex items-center gap-4 ${
+            <div className={`dashboard-item rounded-xl p-5 border flex items-center gap-4 ${
                 today ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-800/50 border-slate-700'
             }`}>
                 <span className="text-4xl">{today ? '✅' : '⏰'}</span>
@@ -80,17 +93,17 @@ function GuruDashboard({ data }) {
             </div>
 
             {/* Monthly Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                <StatCard label="Hadir"     value={b.hadir}     icon="✅" color="green"  />
-                <StatCard label="Terlambat" value={b.terlambat} icon="⏰" color="yellow" />
-                <StatCard label="Izin"      value={b.izin}      icon="📝" color="blue"   />
-                <StatCard label="Cuti"      value={b.cuti}      icon="🏖️" color="violet" />
-                <StatCard label="Alpha"     value={b.alpha}     icon="❌" color="red"    />
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
+                <div className="dashboard-item h-full"><StatCard label="Hadir"     value={b.hadir}     icon="✅" color="green"  /></div>
+                <div className="dashboard-item h-full"><StatCard label="Terlambat" value={b.terlambat} icon="⏰" color="yellow" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Izin"      value={b.izin}      icon="📝" color="blue"   /></div>
+                <div className="dashboard-item h-full"><StatCard label="Cuti"      value={b.cuti}      icon="🏖️" color="violet" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Alpha"     value={b.alpha}     icon="❌" color="red"    /></div>
             </div>
 
             {/* Chart */}
             {pieData.length > 0 && (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div className="dashboard-item bg-slate-900 border border-slate-800 rounded-xl p-5">
                     <h3 className="text-white font-semibold mb-4">Rekap Bulan Ini</h3>
                     <ResponsiveContainer width="100%" height={200}>
                         <PieChart>
@@ -105,7 +118,7 @@ function GuruDashboard({ data }) {
             )}
 
             {data.pending_izin > 0 && (
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-3">
+                <div className="dashboard-item bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-3">
                     <span className="text-2xl">📋</span>
                     <div>
                         <p className="text-amber-400 font-medium">{data.pending_izin} pengajuan izin masih pending</p>
@@ -119,6 +132,18 @@ function GuruDashboard({ data }) {
 
 // ─── Admin/Kepala Dashboard ───────────────────────────────────────────────────
 function AdminDashboard({ data }) {
+    const containerRef = useRef(null)
+
+    useEffect(() => {
+        const ctx = gsap.context(() => {
+            gsap.fromTo('.dashboard-item', 
+                { opacity: 0, scale: 0.95, y: 20 }, 
+                { opacity: 1, scale: 1, y: 0, duration: 0.5, stagger: 0.05, ease: 'back.out(1.5)' }
+            )
+        }, containerRef)
+        return () => ctx.revert()
+    }, [data])
+
     const t    = data.today || {}
     const trend = data.weekly_trend || {}
 
@@ -129,26 +154,29 @@ function AdminDashboard({ data }) {
     })
 
     return (
-        <div className="space-y-6">
+        <div ref={containerRef} className="space-y-6">
             {/* Today Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                <StatCard label="Total Pegawai" value={data.total_pegawai}   icon="👥" color="blue"   />
-                <StatCard label="Hadir"          value={t.hadir}             icon="✅" color="green"  />
-                <StatCard label="Terlambat"      value={t.terlambat}         icon="⏰" color="yellow" />
-                <StatCard label="Izin"           value={t.izin}              icon="📝" color="blue"   />
-                <StatCard label="Alpha"          value={t.alpha}             icon="❌" color="red"    />
-                <StatCard label="Pending Izin"   value={data.pending_izin}   icon="📋" color="violet" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+                <div className="dashboard-item h-full"><StatCard label="Total Pegawai" value={data.total_pegawai}   icon="👥" color="blue"   /></div>
+                <div className="dashboard-item h-full"><StatCard label="Hadir"          value={t.hadir}             icon="✅" color="green"  /></div>
+                <div className="dashboard-item h-full"><StatCard label="Terlambat"      value={t.terlambat}         icon="⏰" color="yellow" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Izin"           value={t.izin}              icon="📝" color="blue"   /></div>
+                <div className="dashboard-item h-full"><StatCard label="Alpha"          value={t.alpha}             icon="❌" color="red"    /></div>
+                <div className="dashboard-item h-full"><StatCard label="Pending Izin"   value={data.pending_izin}   icon="📋" color="violet" /></div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Weekly Trend */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div className="dashboard-item bg-slate-900 border border-slate-800 rounded-xl p-5">
                     <h3 className="text-white font-semibold mb-4">Tren Kehadiran 7 Hari</h3>
                     <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={barData}>
                             <XAxis dataKey="date" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                             <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                            <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }} />
+                            <Tooltip 
+                                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                                contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }} 
+                            />
                             <Bar dataKey="hadir"     fill={STATUS_COLORS.hadir}     radius={[2, 2, 0, 0]} name="Hadir"     />
                             <Bar dataKey="terlambat" fill={STATUS_COLORS.terlambat} radius={[2, 2, 0, 0]} name="Terlambat" />
                             <Bar dataKey="alpha"     fill={STATUS_COLORS.alpha}     radius={[2, 2, 0, 0]} name="Alpha"     />
@@ -157,7 +185,7 @@ function AdminDashboard({ data }) {
                 </div>
 
                 {/* Recent Checkins */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div className="dashboard-item bg-slate-900 border border-slate-800 rounded-xl p-5">
                     <h3 className="text-white font-semibold mb-4">Check-in Terkini</h3>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                         {(data.recent_checkins || []).map(p => (
@@ -244,6 +272,7 @@ function YayasanDashboard({ data }) {
                                 <XAxis dataKey="name" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                                 <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                                 <Tooltip
+                                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                                     contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                     formatter={(val, name) => [val, name]}
                                 />
@@ -361,9 +390,8 @@ export default function Dashboard() {
                     ))}
                 </div>
             ) : stats ? (
-                user?.role === 'guru'           ? <GuruDashboard data={stats} />    :
-                user?.role === 'admin'          ? <AdminDashboard data={stats} />   :
-                user?.role === 'kepala_sekolah' ? <AdminDashboard data={stats} />   :
+                ['guru', 'pegawai'].includes(user?.role) ? <GuruDashboard data={stats} />    :
+                ['admin', 'kepala_sekolah'].includes(user?.role) ? <AdminDashboard data={stats} />   :
                 user?.role === 'yayasan'        ? <YayasanDashboard data={stats} /> :
                 <div className="text-slate-400">Dashboard tersedia</div>
             ) : (

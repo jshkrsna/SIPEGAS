@@ -15,7 +15,7 @@ class SekolahController extends Controller
         $query = Sekolah::query();
 
         if ($user->isYayasan()) {
-            $query->where('yayasan_id', $user->yayasan_id);
+            $query->where('is_active', 1);
         } elseif ($user->isAdmin() || $user->isKepalaSekolah() || $user->isGuru() || $user->isPegawai()) {
             $query->where('id', $user->sekolah_id);
         }

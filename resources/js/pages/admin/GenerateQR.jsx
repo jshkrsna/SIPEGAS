@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
+import { QRCodeCanvas } from 'qrcode.react'
 import api from '../../api/axios'
 
 export default function GenerateQR() {
@@ -18,6 +18,18 @@ export default function GenerateQR() {
         } finally {
             setLoading(false)
         }
+    }
+
+    const downloadQR = () => {
+        const canvas = document.getElementById('qr-code-canvas')
+        if (!canvas) return
+        const pngUrl = canvas.toDataURL("image/png")
+        const downloadLink = document.createElement("a")
+        downloadLink.href = pngUrl
+        downloadLink.download = `QR-Presensi-${Date.now()}.png`
+        document.body.appendChild(downloadLink)
+        downloadLink.click()
+        document.body.removeChild(downloadLink)
     }
 
     useEffect(() => {
@@ -53,7 +65,8 @@ export default function GenerateQR() {
                         <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : (
-                    <QRCodeSVG 
+                    <QRCodeCanvas 
+                        id="qr-code-canvas"
                         value={token} 
                         size={256}
                         level="H"
@@ -70,17 +83,29 @@ export default function GenerateQR() {
             </div>
 
             {token && !loading && (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col items-center gap-2 max-w-sm mx-auto">
-                    <p className="text-slate-400 text-sm">QR Code akan kedaluwarsa dalam:</p>
-                    <p className={`text-2xl font-mono font-bold ${expiresIn < 60 ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {formattedTime}
-                    </p>
-                    <button 
-                        onClick={fetchToken}
-                        className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
-                    >
-                        🔄 Perbarui QR Sekarang
-                    </button>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col items-center gap-5 max-w-sm mx-auto">
+                    <div className="text-center">
+                        <p className="text-slate-400 text-sm mb-1">QR Code akan kedaluwarsa dalam:</p>
+                        <p className={`text-3xl font-mono font-bold ${expiresIn < 60 ? 'text-red-400' : 'text-emerald-400'}`}>
+                            {formattedTime}
+                        </p>
+                    </div>
+                    
+                    <div className="flex gap-3 w-full">
+                        <button 
+                            onClick={fetchToken}
+                            className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 border border-slate-700"
+                        >
+                            🔄 Perbarui
+                        </button>
+                        <button 
+                            onClick={downloadQR}
+                            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
