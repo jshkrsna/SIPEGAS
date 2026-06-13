@@ -13,8 +13,8 @@ class Presensi extends Model
 
     protected $fillable = [
         'pengguna_id', 'jam_kerja_id', 'tanggal', 'waktu_checkin', 'waktu_checkout',
-        'metode_checkin', 'status_kehadiran', 'terlambat_menit',
-        'selfie_checkin_url', 'selfie_checkout_url', 'keterangan',
+        'metode_checkin', 'metode_checkout', 'status_kehadiran', 'terlambat_menit',
+        'selfie_checkin_url', 'selfie_checkout_url', 'keterangan', 'is_luar_radius', 'bukti_luar_radius_url', 'status_approval_remote'
     ];
 
     protected $casts = [
@@ -53,5 +53,21 @@ class Presensi extends Model
         return $this->gpsLog?->lng_checkin;
     }
 
-    protected $appends = ['metode', 'selfie_url', 'lat_checkin', 'lng_checkin'];
+    public function getStatusCheckinAttribute(): string
+    {
+        if (!$this->waktu_checkin) return '-';
+        return $this->terlambat_menit > 0 ? 'Terlambat' : 'Tepat Waktu';
+    }
+
+    public function getStatusCheckoutAttribute(): string
+    {
+        if (!$this->waktu_checkout) return 'Belum';
+        if ($this->jamKerja && $this->jamKerja->jam_pulang) {
+            $jamPulang = \Carbon\Carbon::parse($this->tanggal->toDateString() . ' ' . $this->jamKerja->jam_pulang);
+            return $this->waktu_checkout->lt($jamPulang) ? 'Pulang Awal' : 'Tepat Waktu';
+        }
+        return 'Selesai';
+    }
+
+    protected $appends = ['metode', 'selfie_url', 'lat_checkin', 'lng_checkin', 'status_checkin', 'status_checkout'];
 }

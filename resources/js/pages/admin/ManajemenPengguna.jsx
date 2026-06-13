@@ -83,6 +83,15 @@ export default function ManajemenPengguna() {
         } catch {}
     }
 
+    const handleActivate = async (id, name) => {
+        if (!confirm(`Aktifkan akun "${name}"?`)) return
+        try {
+            await api.put(`/pengguna/${id}`, { is_active: 1 })
+            setSuccess(`${name} berhasil diaktifkan.`)
+            fetchUsers()
+        } catch {}
+    }
+
     const ROLE_LABELS = {
         pegawai: 'Pegawai',
         admin: 'Administrator',
@@ -228,10 +237,15 @@ export default function ManajemenPengguna() {
                                                     className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 hover:bg-blue-500/10 px-2 py-1 rounded-lg transition-colors">
                                                     Edit
                                                 </button>
-                                                {u.is_active && (
+                                                {u.is_active ? (
                                                     <button onClick={() => handleDeactivate(u.id, u.nama_lengkap)}
                                                         className="text-xs text-red-400 hover:text-red-300 border border-red-500/30 hover:bg-red-500/10 px-2 py-1 rounded-lg transition-colors">
                                                         Nonaktif
+                                                    </button>
+                                                ) : (
+                                                    <button onClick={() => handleActivate(u.id, u.nama_lengkap)}
+                                                        className="text-xs text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/10 px-2 py-1 rounded-lg transition-colors">
+                                                        Aktifkan
                                                     </button>
                                                 )}
                                             </div>

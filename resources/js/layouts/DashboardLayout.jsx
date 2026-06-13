@@ -10,7 +10,6 @@ const navItems = {
         { to: '/presensi/riwayat', icon: '📋', label: 'Riwayat' },
         { to: '/presensi/kalender', icon: '📅', label: 'Kalender' },
         { to: '/izin', icon: '📝', label: 'Izin / Cuti' },
-        { to: '/laporan', icon: '📊', label: 'Laporan' },
     ],
     admin: [
         { to: '/dashboard', icon: '', label: 'Dashboard' },
@@ -19,7 +18,6 @@ const navItems = {
         { to: '/presensi/approval-jarak-jauh', icon: '🌍', label: 'Approval Jarak Jauh' },
         { to: '/izin/approval', icon: '✅', label: 'Approval Izin' },
         { to: '/pengguna', icon: '👥', label: 'Pengguna' },
-        { to: '/laporan', icon: '📊', label: 'Laporan' },
         { to: '/settings/jam-kerja', icon: '', label: 'Jam Kerja' },
         { to: '/settings/hari-libur', icon: '', label: 'Hari Libur' },
         { to: '/settings/gps', icon: '', label: 'Lokasi GPS' },
@@ -30,7 +28,6 @@ const navItems = {
         { to: '/qr-generator', icon: '🔲', label: 'Generate QR' },
         { to: '/presensi/approval-jarak-jauh', icon: '🌍', label: 'Approval Jarak Jauh' },
         { to: '/izin/approval', icon: '✅', label: 'Approval Izin' },
-        { to: '/laporan', icon: '📊', label: 'Laporan' },
     ],
     yayasan: [
         { to: '/dashboard', icon: '', label: 'Dashboard' },
@@ -106,7 +103,7 @@ export default function DashboardLayout() {
                     <NavLink
                         key={item.to}
                         to={item.to}
-                        end={item.to === '/dashboard'}
+                        end={item.to === '/dashboard' || item.to === '/presensi'}
                         onClick={() => mobile && setSidebarOpen(false)}
                         {...navHover}
                         className={({ isActive }) =>

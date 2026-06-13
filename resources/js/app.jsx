@@ -13,6 +13,7 @@ import ApprovalIzin from './pages/izin/ApprovalIzin'
 import ApprovalJarakJauh from './pages/admin/ApprovalJarakJauh'
 import ManajemenPengguna from './pages/admin/ManajemenPengguna'
 import LaporanBulanan from './pages/laporan/LaporanBulanan'
+import LaporanYayasan from './pages/laporan/LaporanYayasan'
 import JamKerjaPage from './pages/settings/JamKerjaPage'
 import HariLiburPage from './pages/settings/HariLiburPage'
 import GpsPage from './pages/settings/GpsPage'
@@ -74,7 +75,9 @@ export default function App() {
                         <ApprovalJarakJauh />
                     </PrivateRoute>
                 } />
-                <Route path="/laporan" element={<LaporanBulanan />} />
+                <Route path="/laporan" element={
+                    user?.role === 'yayasan' ? <LaporanYayasan /> : <LaporanBulanan />
+                } />
                 <Route path="/pengguna" element={
                     <PrivateRoute roles={['admin']}>
                         <ManajemenPengguna />

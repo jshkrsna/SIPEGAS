@@ -295,7 +295,7 @@ function QRCamera({ onScan, disabled }) {
             canvas.width  = video.videoWidth
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
+            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' })
             if (code) {
                 stopCamera()
                 onScan(code.data)
@@ -323,6 +323,33 @@ function QRCamera({ onScan, disabled }) {
         } finally { setStarting(false) }
     }
 
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        setError('')
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            const img = new Image()
+            img.onload = () => {
+                const canvas = canvasRef.current
+                if (!canvas) return
+                const ctx = canvas.getContext('2d')
+                canvas.width = img.width
+                canvas.height = img.height
+                ctx.drawImage(img, 0, 0, img.width, img.height)
+                const imageData = ctx.getImageData(0, 0, img.width, img.height)
+                const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' })
+                if (code) {
+                    onScan(code.data)
+                } else {
+                    setError('QR Code tidak ditemukan pada gambar yang diunggah.')
+                }
+            }
+            img.src = event.target.result
+        }
+        reader.readAsDataURL(file)
+    }
+
     useEffect(() => () => stopCamera(), [stream])
 
     return (
@@ -330,15 +357,27 @@ function QRCamera({ onScan, disabled }) {
             {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>}
 
             {!stream && (
-                <button onClick={startCamera} disabled={disabled || starting}
-                    className="w-full aspect-video rounded-xl bg-slate-800 border-2 border-dashed border-slate-700 hover:border-emerald-500/60 flex flex-col items-center justify-center gap-3 transition-all duration-200 group">
-                    <div className="w-14 h-14 rounded-xl bg-slate-700 group-hover:bg-emerald-500/20 flex items-center justify-center transition-colors">
-                        <svg className="w-7 h-7 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 4h4v4H4V4zm12 0h4v4h-4V4zM4 16h4v4H4v-4z"/>
-                        </svg>
-                    </div>
-                    <span className="text-slate-400 text-sm">{starting ? 'Menyiapkan scanner...' : 'Aktifkan Scanner QR'}</span>
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                    <button onClick={startCamera} disabled={disabled || starting}
+                        className="w-full aspect-video rounded-xl bg-slate-800 border-2 border-dashed border-slate-700 hover:border-emerald-500/60 flex flex-col items-center justify-center gap-3 transition-all duration-200 group p-2">
+                        <div className="w-12 h-12 rounded-xl bg-slate-700 group-hover:bg-emerald-500/20 flex items-center justify-center transition-colors">
+                            <svg className="w-6 h-6 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 4h4v4H4V4zm12 0h4v4h-4V4zM4 16h4v4H4v-4z"/>
+                            </svg>
+                        </div>
+                        <span className="text-slate-400 text-xs text-center">{starting ? 'Menyiapkan...' : 'Buka Kamera'}</span>
+                    </button>
+                    
+                    <label className="w-full aspect-video rounded-xl bg-slate-800 border-2 border-dashed border-slate-700 hover:border-emerald-500/60 flex flex-col items-center justify-center gap-3 transition-all duration-200 group cursor-pointer p-2">
+                        <div className="w-12 h-12 rounded-xl bg-slate-700 group-hover:bg-emerald-500/20 flex items-center justify-center transition-colors">
+                            <svg className="w-6 h-6 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                            </svg>
+                        </div>
+                        <span className="text-slate-400 text-xs text-center">Upload Gambar QR</span>
+                        <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={disabled || starting} />
+                    </label>
+                </div>
             )}
 
             <div className={`relative rounded-xl overflow-hidden bg-black aspect-video ${!stream ? 'hidden' : ''}`}>
@@ -433,6 +472,7 @@ export default function PresensiPage() {
     const tabContentRef   = useRef(null)
 
     const [todayPresensi, setTodayPresensi] = useState(null)
+    const [holiday, setHoliday]             = useState(null)
     const [loadingToday, setLoadingToday]   = useState(true)
     const [location, setLocation]           = useState(null)
     const [selfieData, setSelfieData]       = useState(null)
@@ -455,7 +495,11 @@ export default function PresensiPage() {
     }
 
     const fetchToday = async () => {
-        try { const { data } = await api.get('/presensi/today'); setTodayPresensi(data.data) }
+        try { 
+            const { data } = await api.get('/presensi/today')
+            setTodayPresensi(data.data)
+            setHoliday(data.holiday)
+        }
         catch {} finally { setLoadingToday(false) }
     }
 
@@ -485,15 +529,19 @@ export default function PresensiPage() {
             setResult(data)
             setTodayPresensi(data.data?.presensi)
         } catch (err) {
-            setError(err.response?.data?.message || 'QR Code tidak valid atau sudah kadaluarsa.')
-            setQrToken('')
+            if (err.response?.data?.error_code === 'LUAR_RADIUS') {
+                setShowRemoteForm(true)
+                setError('Anda berada di luar radius sekolah. Silakan lengkapi form presensi jarak jauh di bawah ini.')
+            } else {
+                setError(err.response?.data?.message || 'QR Code tidak valid atau sudah kadaluarsa.')
+                setQrToken('')
+            }
         } finally { setQrSubmitting(false) }
     }
 
     const handleCheckin = async () => {
         if (!selfieData) return setError('Foto wajah wajib diambil terlebih dahulu.')
         if (!location)   return setError('Lokasi GPS belum terdeteksi.')
-        if (showRemoteForm && !remoteFile) return setError('Bukti file bekerja jarak jauh wajib dilampirkan.')
         
         setError(''); setSubmitting(true)
         try {
@@ -504,22 +552,47 @@ export default function PresensiPage() {
                 selfie_url: selfieData,
                 metode: 'face',
             }
-            if (showRemoteForm) {
-                payload.is_luar_radius = true
-                payload.bukti_luar_radius = remoteFile
-                payload.keterangan = remoteNote
+            const { data } = await api.post('/presensi/checkin', payload)
+            setResult(data)
+            setTodayPresensi(data.data?.presensi)
+        } catch (err) {
+            if (err.response?.data?.error_code === 'LUAR_RADIUS') {
+                setShowRemoteForm(true)
+                setError('Anda berada di luar radius sekolah. Silakan lengkapi form presensi jarak jauh di bawah ini.')
+            } else {
+                setError(err.response?.data?.message || 'Gagal melakukan check-in.')
+            }
+        } finally { setSubmitting(false) }
+    }
+
+    const handleRemoteSubmit = async () => {
+        if (!location) return setError('Lokasi GPS belum terdeteksi.')
+        if (!remoteFile) return setError('Bukti file bekerja jarak jauh wajib dilampirkan.')
+        if (tab === 'face' && !selfieData) return setError('Foto wajah wajib diambil terlebih dahulu.')
+        if (tab === 'qr' && !qrToken) return setError('QR Token tidak valid.')
+
+        setError(''); setSubmitting(true)
+        try {
+            const payload = {
+                lat: location.lat,
+                lng: location.lng,
+                accuracy_meter: location.accuracy,
+                metode: tab === 'face' ? 'face' : 'qr_code',
+                is_luar_radius: true,
+                bukti_luar_radius: remoteFile,
+                keterangan: remoteNote
+            }
+            if (tab === 'face') {
+                payload.selfie_url = selfieData
+            } else {
+                payload.qr_token = qrToken
             }
             const { data } = await api.post('/presensi/checkin', payload)
             setResult(data)
             setTodayPresensi(data.data?.presensi)
             setShowRemoteForm(false)
         } catch (err) {
-            if (err.response?.data?.error_code === 'LUAR_RADIUS') {
-                setShowRemoteForm(true)
-                setError('Anda berada di luar radius sekolah. Silakan lengkapi form bukti bekerja jarak jauh di bawah ini.')
-            } else {
-                setError(err.response?.data?.message || 'Gagal melakukan check-in.')
-            }
+            setError(err.response?.data?.message || 'Gagal mengirim presensi jarak jauh.')
         } finally { setSubmitting(false) }
     }
 
@@ -533,6 +606,57 @@ export default function PresensiPage() {
             setError(err.response?.data?.message || 'Gagal melakukan check-out.')
         } finally { setSubmitting(false) }
     }
+
+    const renderRemoteForm = () => (
+        <div className="space-y-4 p-4 border border-blue-500/30 bg-blue-500/5 rounded-xl">
+            <div className="flex items-center gap-3 border-b border-slate-700 pb-3">
+                {tab === 'face' ? (
+                    <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-600 flex-shrink-0">
+                        <img src={selfieData} alt="Selfie" className="w-full h-full object-cover" />
+                    </div>
+                ) : (
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                )}
+                <div>
+                    <p className="text-white text-sm font-semibold">{tab === 'face' ? 'Foto Wajah Tersimpan' : 'QR Scan Berhasil'}</p>
+                    <p className="text-slate-400 text-xs">Form Presensi Jarak Jauh</p>
+                </div>
+            </div>
+            
+            <div>
+                <label className="block text-slate-400 text-xs font-medium mb-1.5">Upload Bukti Bekerja (Wajib)</label>
+                <input 
+                    type="file" 
+                    accept="image/*,.pdf"
+                    onChange={handleFileChange}
+                    className="w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-500/20 file:text-blue-400 hover:file:bg-blue-500/30 transition-colors bg-slate-800 rounded-xl p-1.5 border border-slate-700"
+                />
+                {remoteFile && <p className="text-emerald-400 text-xs mt-2">✓ File berhasil dipilih</p>}
+            </div>
+
+            <div>
+                <label className="block text-slate-400 text-xs font-medium mb-1.5">Catatan (Opsional)</label>
+                <textarea 
+                    value={remoteNote}
+                    onChange={e => setRemoteNote(e.target.value)}
+                    rows={2}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
+                    placeholder="Tambahkan catatan presensi jarak jauh Anda..."
+                />
+            </div>
+            <button
+                onClick={handleRemoteSubmit}
+                disabled={submitting || !remoteFile}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+            >
+                {submitting ? (
+                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Memproses...</>
+                ) : 'Kirim Presensi Jarak Jauh'}
+            </button>
+        </div>
+    )
 
     const now = dayjs()
 
@@ -550,8 +674,15 @@ export default function PresensiPage() {
                 <p className="text-slate-400 text-sm mt-0.5">{now.format('dddd, D MMMM YYYY · HH:mm')}</p>
             </div>
 
-            {/* ── Sudah check-in & checkout ── */}
-            {todayPresensi?.waktu_checkout && (
+            {/* ── Status Presensi / Libur ── */}
+            {holiday ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-6 text-center">
+                    <span className="text-4xl mb-3 block">🎉</span>
+                    <h3 className="text-emerald-400 font-bold text-lg mb-1">Selamat untuk berlibur!</h3>
+                    <p className="text-slate-300 text-sm">Hari ini adalah hari libur: <span className="font-semibold text-white">{holiday.nama_libur}</span></p>
+                    <p className="text-slate-500 text-xs mt-3">Fitur presensi dinonaktifkan pada hari libur.</p>
+                </div>
+            ) : todayPresensi?.waktu_checkout ? (
                 <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-6 text-center space-y-3">
                     <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
                         <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -569,10 +700,10 @@ export default function PresensiPage() {
                         todayPresensi.status_kehadiran === 'hadir' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
                     }`}>{todayPresensi.status_kehadiran}</span>
                 </div>
-            )}
+            ) : null}
 
             {/* ── Check-In Form ── */}
-            {!todayPresensi && (
+            {!holiday && !todayPresensi && (
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
                     {/* Card Header */}
                     <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-800">
@@ -629,89 +760,59 @@ export default function PresensiPage() {
                         {tab === 'face' && (
                             <div className="space-y-4">
                                 {!showRemoteForm ? (
-                                    <div>
-                                        <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">Foto Wajah</p>
-                                        <FaceCamera onCapture={setSelfieData} disabled={submitting} location={location} />
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4 p-4 border border-blue-500/30 bg-blue-500/5 rounded-xl">
-                                        <div className="flex items-center gap-3 border-b border-slate-700 pb-3">
-                                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-600 flex-shrink-0">
-                                                <img src={selfieData} alt="Selfie" className="w-full h-full object-cover" />
-                                            </div>
-                                            <div>
-                                                <p className="text-white text-sm font-semibold">Foto Wajah Tersimpan</p>
-                                                <p className="text-slate-400 text-xs">Form Presensi Jarak Jauh</p>
-                                            </div>
-                                        </div>
-                                        
+                                    <>
                                         <div>
-                                            <label className="block text-slate-400 text-xs font-medium mb-1.5">Upload Bukti Bekerja (Wajib)</label>
-                                            <input 
-                                                type="file" 
-                                                accept="image/*,.pdf"
-                                                onChange={handleFileChange}
-                                                className="w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-500/20 file:text-blue-400 hover:file:bg-blue-500/30 transition-colors bg-slate-800 rounded-xl p-1.5 border border-slate-700"
-                                            />
-                                            {remoteFile && <p className="text-emerald-400 text-xs mt-2">✓ File berhasil dipilih</p>}
+                                            <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">Foto Wajah</p>
+                                            <FaceCamera onCapture={setSelfieData} disabled={submitting} location={location} />
                                         </div>
-
-                                        <div>
-                                            <label className="block text-slate-400 text-xs font-medium mb-1.5">Catatan (Opsional)</label>
-                                            <textarea 
-                                                value={remoteNote}
-                                                onChange={e => setRemoteNote(e.target.value)}
-                                                rows={2}
-                                                className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
-                                                placeholder="Tambahkan catatan presensi jarak jauh Anda..."
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">⚠️ {error}</div>}
-                                {result && (
-                                    <div className={`p-3 rounded-lg border text-sm ${result.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
-                                        {result.message}
-                                    </div>
-                                )}
-
-                                <button
-                                    onClick={handleCheckin}
-                                    disabled={submitting || !selfieData || !location || (showRemoteForm && !remoteFile)}
-                                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
-                                >
-                                    {submitting ? (
-                                        <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Memproses...</>
-                                    ) : (showRemoteForm ? 'Kirim Presensi Jarak Jauh' : 'Check-In Sekarang')}
-                                </button>
+                                        {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">⚠️ {error}</div>}
+                                        {result && (
+                                            <div className={`p-3 rounded-lg border text-sm ${result.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                                                {result.message}
+                                            </div>
+                                        )}
+                                        <button
+                                            onClick={handleCheckin}
+                                            disabled={submitting || !selfieData || !location}
+                                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                                        >
+                                            {submitting ? (
+                                                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Memproses...</>
+                                            ) : 'Check-In Sekarang'}
+                                        </button>
+                                    </>
+                                ) : renderRemoteForm()}
                             </div>
                         )}
 
                         {/* QR Tab */}
                         {tab === 'qr' && (
                             <div className="space-y-4">
-                                {qrSubmitting && (
-                                    <div className="flex items-center justify-center gap-3 py-4">
-                                        <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                                        <span className="text-emerald-400 text-sm">Memvalidasi QR Code...</span>
-                                    </div>
-                                )}
-                                {!qrToken && !qrSubmitting && (
+                                {!showRemoteForm ? (
                                     <>
-                                        <div>
-                                            <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">Scanner QR</p>
-                                            <QRCamera onScan={handleQrScan} disabled={qrSubmitting} />
-                                        </div>
-                                        <p className="text-slate-500 text-xs text-center">Arahkan kamera ke QR Code yang ditampilkan oleh Admin/Kepala Sekolah. Presensi akan tercatat otomatis.</p>
+                                        {qrSubmitting && (
+                                            <div className="flex items-center justify-center gap-3 py-4">
+                                                <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-emerald-400 text-sm">Memvalidasi QR Code...</span>
+                                            </div>
+                                        )}
+                                        {!qrToken && !qrSubmitting && (
+                                            <>
+                                                <div>
+                                                    <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">Scanner QR</p>
+                                                    <QRCamera onScan={handleQrScan} disabled={qrSubmitting} />
+                                                </div>
+                                                <p className="text-slate-500 text-xs text-center">Arahkan kamera ke QR Code yang ditampilkan oleh Admin/Kepala Sekolah. Presensi akan tercatat otomatis.</p>
+                                            </>
+                                        )}
+                                        {qrToken && result && (
+                                            <div className={`p-4 rounded-xl border text-sm ${result.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                                                {result.message}
+                                            </div>
+                                        )}
+                                        {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">⚠️ {error}</div>}
                                     </>
-                                )}
-                                {qrToken && result && (
-                                    <div className={`p-4 rounded-xl border text-sm ${result.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
-                                        {result.message}
-                                    </div>
-                                )}
-                                {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">⚠️ {error}</div>}
+                                ) : renderRemoteForm()}
                             </div>
                         )}
                     </div>
@@ -719,7 +820,7 @@ export default function PresensiPage() {
             )}
 
             {/* ── Checked-in, belum checkout ── */}
-            {todayPresensi && !todayPresensi.waktu_checkout && (
+            {!holiday && todayPresensi && !todayPresensi.waktu_checkout && (
                 <div className="space-y-4">
                     <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">

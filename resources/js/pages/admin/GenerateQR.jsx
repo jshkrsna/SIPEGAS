@@ -58,7 +58,13 @@ export default function GenerateQR() {
                         size={256}
                         level="H"
                         includeMargin={false}
-                        fgColor="#0f172a" 
+                        fgColor="#0f172a"
+                        imageSettings={{
+                            src: "/favicon.svg",
+                            height: 48,
+                            width: 48,
+                            excavate: true,
+                        }}
                     />
                 )}
             </div>

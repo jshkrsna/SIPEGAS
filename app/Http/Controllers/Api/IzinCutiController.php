@@ -16,10 +16,12 @@ class IzinCutiController extends Controller
         $user  = $request->user();
         $query = IzinCuti::with(['pengguna:id,nama_lengkap,nip', 'approvedBy:id,nama_lengkap']);
 
-        if ($user->isGuru()) {
+        if ($user->isPegawai()) {
             $query->where('pengguna_id', $user->id);
-        } elseif ($user->isAdmin() || $user->isKepalaSekolah()) {
-            $query->whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $user->sekolah_id));
+        } elseif ($user->isAdmin() || $user->isKepalaSekolah() || $user->isYayasan()) {
+            if (!$user->isYayasan()) {
+                $query->whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $user->sekolah_id));
+            }
         }
 
         if ($request->filled('status')) {
@@ -39,8 +41,13 @@ class IzinCutiController extends Controller
             'tanggal_mulai'   => 'required|date|after_or_equal:today',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'alasan'          => 'required|string|max:1000',
-            'bukti_url'       => 'nullable|url|max:500',
+            'bukti_url'       => 'required|string',
         ]);
+
+        $buktiUrl = $request->bukti_url;
+        if ($buktiUrl && str_starts_with($buktiUrl, 'data:')) {
+            $buktiUrl = $this->saveBase64File($buktiUrl, 'bukti_izin');
+        }
 
         $izin = IzinCuti::create([
             'pengguna_id'     => $request->user()->id,
@@ -48,7 +55,7 @@ class IzinCutiController extends Controller
             'tanggal_mulai'   => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
             'alasan'          => $request->alasan,
-            'bukti_url'       => $request->bukti_url,
+            'bukti_url'       => $buktiUrl,
             'status_approval' => 'pending',
         ]);
 
@@ -57,6 +64,23 @@ class IzinCutiController extends Controller
             'message' => 'Pengajuan izin/cuti berhasil dikirim.',
             'data'    => $izin,
         ], 201);
+    }
+
+    private function saveBase64File(string $base64String, string $folder): string
+    {
+        @list($type, $file_data) = explode(';', $base64String);
+        @list(, $file_data)      = explode(',', $file_data);
+
+        $extension = 'jpg';
+        if (str_contains($type, 'pdf')) $extension = 'pdf';
+        elseif (str_contains($type, 'png')) $extension = 'png';
+        
+        $fileName = \Illuminate\Support\Str::random(40) . '.' . $extension;
+        $path = $folder . '/' . $fileName;
+        
+        \Illuminate\Support\Facades\Storage::disk('public')->put($path, base64_decode($file_data));
+        
+        return '/storage/' . $path;
     }
 
     public function show(string $id): JsonResponse

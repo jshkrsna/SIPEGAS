@@ -33,6 +33,12 @@ class PresensiController extends Controller
         } elseif ($user->isAdmin() || $user->isKepalaSekolah()) {
             // filter by sekolah
             $query->whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $user->sekolah_id));
+        } elseif ($user->isYayasan()) {
+            if ($request->filled('sekolah_id')) {
+                $query->whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $request->sekolah_id));
+            } else {
+                $query->whereHas('pengguna.sekolah', fn ($q) => $q->where('yayasan_id', $user->yayasan_id));
+            }
         }
 
         if ($request->filled('tanggal')) {
@@ -198,7 +204,7 @@ class PresensiController extends Controller
                 'selfie_checkin_url' => $selfiePath,
                 'is_luar_radius'     => $request->boolean('is_luar_radius'),
                 'bukti_luar_radius_url' => $buktiPath,
-                'status_approval_remote'=> $request->boolean('is_luar_radius') ? 'pending' : null,
+                'status_approval_remote'=> $request->boolean('is_luar_radius') ? 'pending' : 'approved',
                 'keterangan'         => $request->keterangan,
             ]);
 
@@ -259,9 +265,10 @@ class PresensiController extends Controller
     public function checkout(Request $request): JsonResponse
     {
         $request->validate([
-            'selfie_url' => 'required|string',
+            'selfie_url' => 'nullable|string', // Changed to nullable because QR checkout might not need selfie
             'lat'        => 'nullable|numeric',
             'lng'        => 'nullable|numeric',
+            'metode'     => 'nullable|in:qr_code,geolocation,face,manual',
         ]);
 
         $user  = $request->user();
@@ -289,6 +296,7 @@ class PresensiController extends Controller
         $presensi->update([
             'waktu_checkout'      => now(),
             'selfie_checkout_url' => $selfiePath,
+            'metode_checkout'     => $request->get('metode', 'qr_code'),
         ]);
 
         return response()->json([
@@ -304,12 +312,24 @@ class PresensiController extends Controller
     public function today(Request $request): JsonResponse
     {
         $user     = $request->user();
+        $todayDate = today();
         $presensi = Presensi::with(['gpsLog', 'jamKerja'])
             ->where('pengguna_id', $user->id)
-            ->whereDate('tanggal', today())
+            ->whereDate('tanggal', $todayDate)
             ->first();
 
-        return response()->json(['success' => true, 'data' => $presensi]);
+        $holiday = \App\Models\HariLibur::where(function ($q) use ($user) {
+                $q->where('sekolah_id', $user->sekolah_id)
+                  ->orWhere('jenis', 'nasional');
+            })
+            ->whereDate('tanggal', $todayDate)
+            ->first();
+
+        return response()->json([
+            'success' => true, 
+            'data' => $presensi,
+            'holiday' => $holiday
+        ]);
     }
 
     /**
@@ -375,10 +395,16 @@ class PresensiController extends Controller
             return response()->json(['success' => false, 'message' => 'Presensi ini bukan presensi jarak jauh atau sudah diproses.'], 400);
         }
 
-        $presensi->update([
+        $updates = [
             'status_approval_remote' => $request->action,
             'keterangan' => ltrim($presensi->keterangan . "\n[Approval Jarak Jauh]: " . ucfirst($request->action) . " oleh " . $request->user()->nama_lengkap, "\n"),
-        ]);
+        ];
+
+        if ($request->action === 'rejected') {
+            $updates['status_kehadiran'] = 'alpha';
+        }
+
+        $presensi->update($updates);
 
         return response()->json([
             'success' => true,

@@ -46,9 +46,14 @@ class PenggunaController extends Controller
             'nama_lengkap' => 'required|string|max:200',
             'email'        => 'required|email|unique:pengguna,email',
             'password'     => 'required|string|min:8',
-            'role'         => 'required|in:guru,admin,kepala_sekolah',
+            'role'         => 'required|in:pegawai,admin,kepala_sekolah,yayasan',
             'jabatan_id'   => 'nullable|exists:jabatan,id',
             'no_hp'        => 'nullable|string|max:20',
+        ], [
+            'nip.unique'   => 'NIP sudah digunakan oleh pengguna lain.',
+            'email.unique' => 'Email sudah digunakan.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'role.in'      => 'Pilihan role tidak valid.',
         ]);
 
         $pengguna = Pengguna::create([
@@ -84,10 +89,15 @@ class PenggunaController extends Controller
             'nama_lengkap' => 'sometimes|string|max:200',
             'email'        => "sometimes|email|unique:pengguna,email,{$id}",
             'nip'          => "sometimes|string|unique:pengguna,nip,{$id}|max:30",
-            'role'         => 'sometimes|in:guru,admin,kepala_sekolah',
+            'role'         => 'sometimes|in:pegawai,admin,kepala_sekolah,yayasan',
             'jabatan_id'   => 'nullable|exists:jabatan,id',
             'is_active'    => 'sometimes|boolean',
             'password'     => 'nullable|string|min:8',
+        ], [
+            'nip.unique'   => 'NIP sudah digunakan oleh pengguna lain.',
+            'email.unique' => 'Email sudah digunakan.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'role.in'      => 'Pilihan role tidak valid.',
         ]);
 
         $updateData = $request->only(['nama_lengkap', 'email', 'nip', 'role', 'jabatan_id', 'is_active']);

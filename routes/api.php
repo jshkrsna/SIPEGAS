@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\IzinCutiController;
 use App\Http\Controllers\Api\PenggunaController;
 use App\Http\Controllers\Api\PresensiController;
 use App\Http\Controllers\Api\RekapController;
+use App\Http\Controllers\Api\SekolahController;
 use App\Http\Controllers\Api\SettingsController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,10 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rekap Bulanan
     Route::prefix('rekap')->group(function () {
         Route::get('/', [RekapController::class, 'index']);
-        Route::get('/export/excel', [RekapController::class, 'exportExcel'])
-            ->middleware('role:admin,kepala_sekolah,yayasan');
-        Route::get('/export/pdf', [RekapController::class, 'exportPdf'])
-            ->middleware('role:admin,kepala_sekolah,yayasan');
+        Route::get('/export/excel', [RekapController::class, 'exportExcel']);
+        Route::get('/export/pdf', [RekapController::class, 'exportPdf']);
         Route::get('/detail/{penggunaId}', [RekapController::class, 'detail']);
         Route::post('/refresh', [RekapController::class, 'refresh'])
             ->middleware('role:admin');
@@ -75,6 +74,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // QR Code
     Route::get('/qr/generate', [\App\Http\Controllers\Api\QrController::class, 'generate'])
         ->middleware('role:admin,kepala_sekolah');
+
+    // Sekolah
+    Route::get('/sekolah', [SekolahController::class, 'index']);
 
 
     // ─── Admin / Kepala Sekolah Only ─────────────────────────────────────────

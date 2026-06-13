@@ -56,10 +56,21 @@ class RekapController extends Controller
         $tahun = $request->get('tahun', now()->year);
         $sekolahId = $request->user()->sekolah_id;
 
+        $this->syncRekap($sekolahId, $bulan, $tahun);
+
+        return response()->json(['success' => true, 'message' => "Rekap {$bulan}/{$tahun} berhasil diperbarui."]);
+    }
+
+    protected function syncRekap($sekolahId, $bulan, $tahun, $penggunaId = null)
+    {
         $start = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $end   = $start->copy()->endOfMonth();
 
-        $pengguna = Pengguna::where('sekolah_id', $sekolahId)->where('is_active', 1)->get();
+        $query = Pengguna::where('sekolah_id', $sekolahId)->where('is_active', 1);
+        if ($penggunaId) {
+            $query->where('id', $penggunaId);
+        }
+        $pengguna = $query->get();
 
         foreach ($pengguna as $p) {
             $presensiData = Presensi::where('pengguna_id', $p->id)
@@ -77,12 +88,10 @@ class RekapController extends Controller
                     'total_izin'           => $presensiByStatus->get('izin', collect())->count(),
                     'total_cuti'           => $presensiByStatus->get('cuti', collect())->count(),
                     'total_alpha'          => $presensiByStatus->get('alpha', collect())->count(),
-                    'total_menit_terlambat' => $presensiData->sum('terlambat_menit'),
+                    'total_menit_terlambat' => max(0, (int) $presensiData->sum('terlambat_menit')),
                 ]
             );
         }
-
-        return response()->json(['success' => true, 'message' => "Rekap {$bulan}/{$tahun} berhasil diperbarui."]);
     }
 
     /**
@@ -129,10 +138,20 @@ class RekapController extends Controller
     {
         $bulan = $request->get('bulan', now()->month);
         $tahun = $request->get('tahun', now()->year);
-        $sekolahId = $request->user()->sekolah_id;
+        $user = $request->user();
+        $sekolahId = $user->isYayasan() ? $request->get('sekolah_id') : $user->sekolah_id;
+
+        if (!$sekolahId) {
+            return response()->json(['message' => 'sekolah_id diperlukan untuk Yayasan'], 400);
+        }
+
+        $penggunaId = $user->isPegawai() ? $user->id : null;
+
+        // Sync data before export
+        $this->syncRekap($sekolahId, $bulan, $tahun, $penggunaId);
 
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\RekapBulananExport($sekolahId, $bulan, $tahun), 
+            new \App\Exports\RekapBulananExport($sekolahId, $bulan, $tahun, $penggunaId), 
             "Rekap_Presensi_{$bulan}_{$tahun}.xlsx"
         );
     }
@@ -144,15 +163,30 @@ class RekapController extends Controller
     {
         $bulan = $request->get('bulan', now()->month);
         $tahun = $request->get('tahun', now()->year);
-        $sekolahId = $request->user()->sekolah_id;
+        $user = $request->user();
+        $sekolahId = $user->isYayasan() ? $request->get('sekolah_id') : $user->sekolah_id;
 
-        $rekap = RekapBulanan::with('pengguna')
+        if (!$sekolahId) {
+            return response()->json(['message' => 'sekolah_id diperlukan untuk Yayasan'], 400);
+        }
+
+        $penggunaId = $user->isPegawai() ? $user->id : null;
+
+        // Sync data before export
+        $this->syncRekap($sekolahId, $bulan, $tahun, $penggunaId);
+
+        $query = RekapBulanan::with('pengguna')
             ->whereHas('pengguna', function ($q) use ($sekolahId) {
                 $q->where('sekolah_id', $sekolahId);
             })
             ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->get();
+            ->where('tahun', $tahun);
+
+        if ($user->isPegawai()) {
+            $query->where('pengguna_id', $user->id);
+        }
+
+        $rekap = $query->get();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.rekap_pdf', compact('rekap', 'bulan', 'tahun'));
         return $pdf->download("Rekap_Presensi_{$bulan}_{$tahun}.pdf");

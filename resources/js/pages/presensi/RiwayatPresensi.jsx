@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
@@ -34,6 +35,12 @@ const METODE_STYLE = {
     face:        'bg-blue-500/15 text-blue-400 border border-blue-500/20',
     qr_code:     'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
     geolocation: 'bg-violet-500/15 text-violet-400 border border-violet-500/20',
+}
+
+const APPROVAL_STYLES = {
+    approved: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
+    pending:  'bg-amber-500/15 text-amber-400 border border-amber-500/20',
+    rejected: 'bg-red-500/15 text-red-400 border border-red-500/20',
 }
 
 // ─── Location Modal ───────────────────────────────────────────────────────────
@@ -122,6 +129,8 @@ function LocationModal({ presensi, onClose }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function RiwayatPresensi() {
     const { user }    = useAuth()
+    const [searchParams] = useSearchParams()
+    const sekolahIdFromUrl = searchParams.get('sekolah_id')
     const pageRef     = usePageTransition()
     const [data, setData]           = useState(null)
     const [loading, setLoading]     = useState(true)
@@ -130,9 +139,10 @@ export default function RiwayatPresensi() {
         bulan: dayjs().month() + 1,
         tahun: dayjs().year(),
         status: '',
+        ...(sekolahIdFromUrl && { sekolah_id: sekolahIdFromUrl })
     })
 
-    const isAdmin = user?.role === 'admin' || user?.role === 'kepala_sekolah'
+    const isAdmin = user?.role === 'admin' || user?.role === 'kepala_sekolah' || user?.role === 'yayasan'
 
     const fetchData = async (page = 1) => {
         setLoading(true)
@@ -147,11 +157,41 @@ export default function RiwayatPresensi() {
 
     const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: dayjs().month(i).format('MMMM') }))
 
+    const handleExport = async (type) => {
+        try {
+            const response = await api.get(`/rekap/export/${type}`, {
+                params: filters,
+                responseType: 'blob',
+            })
+            const url = window.URL.createObjectURL(new Blob([response.data]))
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', `Rekap_Presensi_${filters.bulan}_${filters.tahun}.${type === 'excel' ? 'xlsx' : 'pdf'}`)
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+        } catch (error) {
+            console.error('Export failed:', error)
+        }
+    }
+
     return (
-        <div ref={pageRef} className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5">
-            <div>
-                <h2 className="text-2xl font-bold text-white">Riwayat Presensi</h2>
-                <p className="text-slate-400 text-sm mt-0.5">Data presensi per bulan</p>
+        <div ref={pageRef} className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="text-2xl font-bold text-white">Riwayat Presensi</h2>
+                    <p className="text-slate-400 text-sm mt-0.5">Data presensi per bulan</p>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={() => handleExport('excel')}
+                        className="bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 text-emerald-400 text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                        📥 Excel
+                    </button>
+                    <button onClick={() => handleExport('pdf')}
+                        className="bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-400 text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                        📄 PDF
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -188,10 +228,11 @@ export default function RiwayatPresensi() {
                                         <th className="text-left px-4 py-3 text-slate-400 font-medium">Tanggal</th>
                                         {isAdmin && <th className="text-left px-4 py-3 text-slate-400 font-medium">Pegawai</th>}
                                         <th className="text-left px-4 py-3 text-slate-400 font-medium">Masuk</th>
+                                        <th className="text-left px-4 py-3 text-slate-400 font-medium">Metode Masuk</th>
                                         <th className="text-left px-4 py-3 text-slate-400 font-medium">Pulang</th>
-                                        <th className="text-left px-4 py-3 text-slate-400 font-medium">Status</th>
-                                        <th className="text-left px-4 py-3 text-slate-400 font-medium">Metode</th>
-                                        <th className="text-left px-4 py-3 text-slate-400 font-medium">Terlambat</th>
+                                        <th className="text-left px-4 py-3 text-slate-400 font-medium">Status Pulang</th>
+                                        <th className="text-left px-4 py-3 text-slate-400 font-medium">Status Kehadiran</th>
+                                        <th className="text-left px-4 py-3 text-slate-400 font-medium">Status Approve</th>
                                         {isAdmin && <th className="text-left px-4 py-3 text-slate-400 font-medium">Lokasi</th>}
                                     </tr>
                                 </thead>
@@ -212,11 +253,17 @@ export default function RiwayatPresensi() {
                                                     </div>
                                                 </td>
                                             )}
-                                            <td className="px-4 py-3 text-slate-300">
-                                                {p.waktu_checkin ? dayjs(p.waktu_checkin).format('HH:mm') : '—'}
+                                            <td className="px-4 py-3">
+                                                <span className="text-slate-300 font-medium">{p.waktu_checkin ? dayjs(p.waktu_checkin).format('HH:mm') : '—'}</span>
                                             </td>
-                                            <td className="px-4 py-3 text-slate-300">
-                                                {p.waktu_checkout ? dayjs(p.waktu_checkout).format('HH:mm') : '—'}
+                                            <td className="px-4 py-3">
+                                                {p.metode ? <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-semibold ${METODE_STYLE[p.metode]}`}>{METODE_LABEL[p.metode] || p.metode}</span> : <span className="text-slate-500">—</span>}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className="text-slate-300 font-medium">{p.waktu_checkout ? dayjs(p.waktu_checkout).format('HH:mm') : '—'}</span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {p.status_checkout ? <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-semibold ${p.status_checkout === 'Pulang Awal' ? 'bg-amber-500/20 text-amber-400' : p.status_checkout === 'Belum' ? 'bg-slate-700 text-slate-400' : 'bg-blue-500/20 text-blue-400'}`}>{p.status_checkout}</span> : <span className="text-slate-500">—</span>}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[p.status_kehadiran] || 'bg-slate-700 text-slate-400'}`}>
@@ -224,14 +271,14 @@ export default function RiwayatPresensi() {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                {p.metode ? (
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${METODE_STYLE[p.metode] || 'bg-slate-700 text-slate-400'}`}>
-                                                        {METODE_LABEL[p.metode] || p.metode}
-                                                    </span>
-                                                ) : <span className="text-slate-600">—</span>}
-                                            </td>
-                                            <td className="px-4 py-3 text-slate-400">
-                                                {p.terlambat_menit > 0 ? `${p.terlambat_menit} menit` : '—'}
+                                                {(() => {
+                                                    const statusApp = p.status_approval_remote || (p.is_luar_radius ? 'pending' : 'approved');
+                                                    return (
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-semibold ${APPROVAL_STYLES[statusApp] || 'bg-slate-700 text-slate-400'}`}>
+                                                            {statusApp}
+                                                        </span>
+                                                    )
+                                                })()}
                                             </td>
                                             {isAdmin && (
                                                 <td className="px-4 py-3">
@@ -249,7 +296,7 @@ export default function RiwayatPresensi() {
                                     ))}
                                     {(!data?.data || data.data.length === 0) && (
                                         <tr>
-                                            <td colSpan={isAdmin ? 8 : 6} className="px-4 py-12 text-center text-slate-500">
+                                            <td colSpan={isAdmin ? 9 : 7} className="px-4 py-12 text-center text-slate-500">
                                                 <div className="flex flex-col items-center gap-2">
                                                     <svg className="w-10 h-10 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
