@@ -31,7 +31,7 @@
 
 @layer utilities {
     html.theme-light {
-        filter: invert(1) hue-rotate(180deg);
+        filter: invert(1) hue-rotate(180deg) saturate(0.6) contrast(1.15);
         background-color: #020617; /* Required to ensure the base html background is dark so it inverts to light */
     }
     
@@ -39,6 +39,6 @@
     html.theme-light video,
     html.theme-light canvas,
     html.theme-light .no-invert {
-        filter: invert(1) hue-rotate(180deg);
+        filter: invert(1) hue-rotate(180deg) saturate(1.66) contrast(0.87); /* Reverse the effect for images */
     }
 }
