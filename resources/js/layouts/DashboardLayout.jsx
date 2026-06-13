@@ -67,6 +67,117 @@ const roleBadgeColor = {
     yayasan: 'bg-amber-500/20 text-amber-400',
 }
 
+const Sidebar = ({ mobile = false, isCollapsed, setIsCollapsed, user, items, loggingOut, handleLogout, setSidebarOpen, navHover }) => {
+    const sidebarRef = useRef(null)
+
+    useEffect(() => {
+        if (mobile) return
+        gsap.to(sidebarRef.current, {
+            width: isCollapsed ? 80 : 256,
+            duration: 0.4,
+            ease: 'power3.inOut'
+        })
+        gsap.to('.sidebar-text', {
+            opacity: isCollapsed ? 0 : 1,
+            width: isCollapsed ? 0 : 'auto',
+            duration: 0.3,
+            ease: 'power2.inOut'
+        })
+    }, [isCollapsed, mobile])
+
+    return (
+        <aside ref={sidebarRef} className={`flex flex-col h-full bg-slate-900 border-r border-slate-800 ${mobile ? 'w-full' : 'w-64'} overflow-hidden relative`}>
+            
+            {/* Logo & Toggle */}
+            <div className={`flex items-center px-4 py-5 border-b border-slate-800 h-[73px] ${isCollapsed && !mobile ? 'justify-center' : 'justify-between'}`}>
+                <div className={`flex items-center gap-3 sidebar-text ${isCollapsed && !mobile ? 'hidden' : ''}`}>
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">S</div>
+                    <div className="whitespace-nowrap min-w-0">
+                        <h1 className="text-white font-semibold text-sm">SIPEGAS</h1>
+                    </div>
+                </div>
+                
+                {!mobile && (
+                    <button 
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors flex-shrink-0 flex items-center gap-1"
+                        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                    >
+                        {/* Panel Icon */}
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth={2} />
+                            <path d="M9 3v18" strokeWidth={2} />
+                        </svg>
+                        {/* Direction Arrow */}
+                        <svg className={`w-3.5 h-3.5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                )}
+            </div>
+
+            {/* User info */}
+            <div className={`px-4 py-4 border-b border-slate-800 flex justify-center`}>
+                <NavLink to="/profil" onClick={() => mobile && setSidebarOpen(false)} title={isCollapsed && !mobile ? "Profil" : undefined} className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl transition-all ${isActive ? 'bg-blue-600/20 border border-blue-500/30' : 'bg-slate-800/50 hover:bg-slate-800 border border-transparent hover:border-slate-700'} ${isCollapsed && !mobile ? 'p-2 justify-center w-12 h-12' : 'p-3 w-full'}`
+                }>
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
+                        {user?.foto_profil_url ? (
+                            <img src={user.foto_profil_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                            user?.initials || user?.nama_lengkap?.charAt(0) || '?'
+                        )}
+                    </div>
+                    <div className={`sidebar-text min-w-0 whitespace-nowrap ${isCollapsed && !mobile ? 'hidden' : ''}`}>
+                        <p className="text-white text-sm font-medium truncate">{user?.nama_lengkap}</p>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${roleBadgeColor[user?.role]}`}>
+                            {roleLabel[user?.role]}
+                        </span>
+                    </div>
+                </NavLink>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-1 scrollbar-hide">
+                {items.map(item => (
+                    <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.to === '/dashboard' || item.to === '/presensi'}
+                        onClick={() => mobile && setSidebarOpen(false)}
+                        title={isCollapsed && !mobile ? item.label : undefined}
+                        {...navHover}
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 rounded-lg text-sm font-medium transition-colors duration-150 ${isActive
+                                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent'
+                            } ${isCollapsed && !mobile ? 'justify-center p-2.5 mx-auto w-10 h-10' : 'px-3 py-2.5'}`
+                        }
+                    >
+                        {Icons[item.icon]}
+                        <span className={`sidebar-text whitespace-nowrap ${isCollapsed && !mobile ? 'hidden' : ''}`}>{item.label}</span>
+                    </NavLink>
+                ))}
+            </nav>
+
+            {/* Logout */}
+            <div className="px-3 py-4 border-t border-slate-800 flex justify-center">
+                <button
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    title={isCollapsed && !mobile ? "Keluar" : undefined}
+                    className={`border border-red-500/50 flex items-center justify-center gap-3 rounded-lg text-sm font-medium text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 transition-all duration-150 cursor-pointer ${isCollapsed && !mobile ? 'w-10 h-10 p-0 mx-auto' : 'w-full px-3 py-2.5'}`}
+                >
+                    {Icons.Keluar}
+                    <span className={`sidebar-text whitespace-nowrap ${isCollapsed && !mobile ? 'hidden' : ''}`}>
+                        {loggingOut ? 'Keluar...' : 'Keluar'}
+                    </span>
+                </button>
+            </div>
+        </aside>
+    )
+}
+
 export default function DashboardLayout() {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
@@ -84,122 +195,20 @@ export default function DashboardLayout() {
         navigate('/login')
     }
 
-    const Sidebar = ({ mobile = false }) => {
-        const sidebarRef = useRef(null)
-
-        useEffect(() => {
-            if (mobile) return
-            gsap.to(sidebarRef.current, {
-                width: isCollapsed ? 80 : 256,
-                duration: 0.4,
-                ease: 'power3.inOut'
-            })
-            gsap.to('.sidebar-text', {
-                opacity: isCollapsed ? 0 : 1,
-                width: isCollapsed ? 0 : 'auto',
-                duration: 0.3,
-                ease: 'power2.inOut'
-            })
-        }, [isCollapsed, mobile])
-
-        return (
-            <aside ref={sidebarRef} className={`flex flex-col h-full bg-slate-900 border-r border-slate-800 ${mobile ? 'w-full' : 'w-64'} overflow-hidden relative`}>
-                
-                {/* Logo & Toggle */}
-                <div className={`flex items-center px-4 py-5 border-b border-slate-800 h-[73px] ${isCollapsed && !mobile ? 'justify-center' : 'justify-between'}`}>
-                    <div className={`flex items-center gap-3 sidebar-text ${isCollapsed && !mobile ? 'hidden' : ''}`}>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">S</div>
-                        <div className="whitespace-nowrap min-w-0">
-                            <h1 className="text-white font-semibold text-sm">SIPEGAS</h1>
-                        </div>
-                    </div>
-                    
-                    {!mobile && (
-                        <button 
-                            onClick={() => setIsCollapsed(!isCollapsed)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors flex-shrink-0 flex items-center gap-1"
-                            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-                        >
-                            {/* Panel Icon */}
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth={2} />
-                                <path d="M9 3v18" strokeWidth={2} />
-                            </svg>
-                            {/* Direction Arrow */}
-                            <svg className={`w-3.5 h-3.5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-                    )}
-                </div>
-
-                {/* User info */}
-                <div className={`px-4 py-4 border-b border-slate-800 flex justify-center`}>
-                    <NavLink to="/profil" onClick={() => mobile && setSidebarOpen(false)} title={isCollapsed && !mobile ? "Profil" : undefined} className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-xl transition-all ${isActive ? 'bg-blue-600/20 border border-blue-500/30' : 'bg-slate-800/50 hover:bg-slate-800 border border-transparent hover:border-slate-700'} ${isCollapsed && !mobile ? 'p-2 justify-center w-12 h-12' : 'p-3 w-full'}`
-                    }>
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
-                            {user?.foto_profil_url ? (
-                                <img src={user.foto_profil_url} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                                user?.initials || user?.nama_lengkap?.charAt(0) || '?'
-                            )}
-                        </div>
-                        <div className={`sidebar-text min-w-0 whitespace-nowrap ${isCollapsed && !mobile ? 'hidden' : ''}`}>
-                            <p className="text-white text-sm font-medium truncate">{user?.nama_lengkap}</p>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${roleBadgeColor[user?.role]}`}>
-                                {roleLabel[user?.role]}
-                            </span>
-                        </div>
-                    </NavLink>
-                </div>
-
-                {/* Navigation */}
-                <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-1 scrollbar-hide">
-                    {items.map(item => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            end={item.to === '/dashboard' || item.to === '/presensi'}
-                            onClick={() => mobile && setSidebarOpen(false)}
-                            title={isCollapsed && !mobile ? item.label : undefined}
-                            {...navHover}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 rounded-lg text-sm font-medium transition-colors duration-150 ${isActive
-                                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent'
-                                } ${isCollapsed && !mobile ? 'justify-center p-2.5 mx-auto w-10 h-10' : 'px-3 py-2.5'}`
-                            }
-                        >
-                            {Icons[item.icon]}
-                            <span className={`sidebar-text whitespace-nowrap ${isCollapsed && !mobile ? 'hidden' : ''}`}>{item.label}</span>
-                        </NavLink>
-                    ))}
-                </nav>
-
-                {/* Logout */}
-                <div className="px-3 py-4 border-t border-slate-800 flex justify-center">
-                    <button
-                        onClick={handleLogout}
-                        disabled={loggingOut}
-                        title={isCollapsed && !mobile ? "Keluar" : undefined}
-                        className={`border border-red-500/50 flex items-center justify-center gap-3 rounded-lg text-sm font-medium text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 transition-all duration-150 cursor-pointer ${isCollapsed && !mobile ? 'w-10 h-10 p-0 mx-auto' : 'w-full px-3 py-2.5'}`}
-                    >
-                        {Icons.Keluar}
-                        <span className={`sidebar-text whitespace-nowrap ${isCollapsed && !mobile ? 'hidden' : ''}`}>
-                            {loggingOut ? 'Keluar...' : 'Keluar'}
-                        </span>
-                    </button>
-                </div>
-            </aside>
-        )
-    }
-
     return (
         <div className="flex h-screen bg-slate-950 overflow-hidden">
             {/* Desktop Sidebar */}
             <div className="hidden md:flex md:flex-shrink-0">
-                <Sidebar />
+                <Sidebar 
+                    isCollapsed={isCollapsed} 
+                    setIsCollapsed={setIsCollapsed} 
+                    user={user} 
+                    items={items} 
+                    loggingOut={loggingOut} 
+                    handleLogout={handleLogout} 
+                    setSidebarOpen={setSidebarOpen} 
+                    navHover={navHover} 
+                />
             </div>
 
             {/* Mobile Sidebar Overlay */}
@@ -207,7 +216,17 @@ export default function DashboardLayout() {
                 <div className="fixed inset-0 z-50 md:hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
                     <div className="absolute left-0 top-0 h-full w-72 z-10">
-                        <Sidebar mobile />
+                        <Sidebar 
+                            mobile 
+                            isCollapsed={isCollapsed} 
+                            setIsCollapsed={setIsCollapsed} 
+                            user={user} 
+                            items={items} 
+                            loggingOut={loggingOut} 
+                            handleLogout={handleLogout} 
+                            setSidebarOpen={setSidebarOpen} 
+                            navHover={navHover} 
+                        />
                     </div>
                 </div>
             )}
