@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useLayoutEffect } from 'react'
 import api from '../../api/axios'
 import dayjs from 'dayjs'
 import { gsap } from 'gsap'
+import PageHeader from '../../components/PageHeader'
 
 const JENIS_OPTS = [
     { value: 'izin', label: 'Izin' },
@@ -204,25 +205,17 @@ export default function PengajuanIzin() {
     return (
         <div className="p-4 sm:p-6 max-w-3xl mx-auto" ref={containerRef}>
             {/* Header like Presensi */}
-            <div className="mb-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                            <span className="text-blue-400 text-xl sm:text-2xl">📝</span>
-                        </div>
-                        <div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-white">Izin & Cuti</h2>
-                            <p className="text-slate-400 text-sm mt-0.5">Kelola pengajuan perizinan ketidakhadiran</p>
-                        </div>
-                    </div>
-                    {!showForm && (
-                        <button onClick={() => setShowForm(true)}
-                            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
-                            <span>+</span> Pengajuan Baru
-                        </button>
-                    )}
-                </div>
-            </div>
+            <PageHeader
+                title="Izin & Cuti"
+                description="Kelola pengajuan perizinan ketidakhadiran"
+                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}
+                action={!showForm && (
+                    <button onClick={() => setShowForm(true)}
+                        className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
+                        <span>+</span> Pengajuan Baru
+                    </button>
+                )}
+            />
 
             {/* Success Alert */}
             {success && (

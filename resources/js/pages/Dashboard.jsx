@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../api/axios'
 import gsap from 'gsap'
+import PageHeader from '../components/PageHeader'
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
@@ -19,6 +20,27 @@ const STATUS_COLORS = {
     belum_hadir: '#475569',
 }
 
+const Icon = ({ name, className = "w-7 h-7" }) => {
+    const paths = {
+        hadir: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
+        terlambat: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />,
+        izin: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />,
+        cuti: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />,
+        alpha: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />,
+        pegawai: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />,
+        pending: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />,
+        sekolah: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />,
+        chart: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />,
+        report: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
+        sad: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    }
+    return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {paths[name]}
+        </svg>
+    )
+}
+
 function StatCard({ label, value, icon, color = 'blue', sub }) {
     const colors = {
         blue:   'from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-400',
@@ -30,7 +52,7 @@ function StatCard({ label, value, icon, color = 'blue', sub }) {
     }
     return (
         <div className={`bg-gradient-to-br ${colors[color]} border rounded-xl p-4 flex items-center gap-3 h-full`}>
-            <span className="text-3xl flex-shrink-0">{icon}</span>
+            <span className="flex-shrink-0">{icon}</span>
             <div className="min-w-0 flex-1">
                 <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider truncate" title={label}>{label}</p>
                 <p className="text-white text-2xl font-bold mt-0.5">{value ?? '—'}</p>
@@ -68,9 +90,11 @@ function GuruDashboard({ data }) {
         <div ref={containerRef} className="space-y-6">
             {/* Today Status */}
             <div className={`dashboard-item rounded-xl p-5 border flex items-center gap-4 ${
-                today ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-800/50 border-slate-700'
+                today ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-800/50 border-slate-700 text-amber-400'
             }`}>
-                <span className="text-4xl">{today ? '✅' : '⏰'}</span>
+                <span className="flex-shrink-0">
+                    <Icon name={today ? 'hadir' : 'terlambat'} className="w-10 h-10" />
+                </span>
                 <div>
                     <p className="text-slate-400 text-sm">Status Hari Ini</p>
                     {today ? (
@@ -94,11 +118,11 @@ function GuruDashboard({ data }) {
 
             {/* Monthly Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
-                <div className="dashboard-item h-full"><StatCard label="Hadir"     value={b.hadir}     icon="✅" color="green"  /></div>
-                <div className="dashboard-item h-full"><StatCard label="Terlambat" value={b.terlambat} icon="⏰" color="yellow" /></div>
-                <div className="dashboard-item h-full"><StatCard label="Izin"      value={b.izin}      icon="📝" color="blue"   /></div>
-                <div className="dashboard-item h-full"><StatCard label="Cuti"      value={b.cuti}      icon="🏖️" color="violet" /></div>
-                <div className="dashboard-item h-full"><StatCard label="Alpha"     value={b.alpha}     icon="❌" color="red"    /></div>
+                <div className="dashboard-item h-full"><StatCard label="Hadir"     value={b.hadir}     icon={<Icon name="hadir" />} color="green"  /></div>
+                <div className="dashboard-item h-full"><StatCard label="Terlambat" value={b.terlambat} icon={<Icon name="terlambat" />} color="yellow" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Izin"      value={b.izin}      icon={<Icon name="izin" />} color="blue"   /></div>
+                <div className="dashboard-item h-full"><StatCard label="Cuti"      value={b.cuti}      icon={<Icon name="cuti" />} color="violet" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Alpha"     value={b.alpha}     icon={<Icon name="alpha" />} color="red"    /></div>
             </div>
 
             {/* Chart */}
@@ -119,7 +143,7 @@ function GuruDashboard({ data }) {
 
             {data.pending_izin > 0 && (
                 <div className="dashboard-item bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-3">
-                    <span className="text-2xl">📋</span>
+                    <span className="text-amber-400"><Icon name="pending" className="w-8 h-8" /></span>
                     <div>
                         <p className="text-amber-400 font-medium">{data.pending_izin} pengajuan izin masih pending</p>
                         <a href="/izin" className="text-amber-300 text-sm hover:underline">Lihat status →</a>
@@ -157,12 +181,12 @@ function AdminDashboard({ data }) {
         <div ref={containerRef} className="space-y-6">
             {/* Today Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
-                <div className="dashboard-item h-full"><StatCard label="Total Pegawai" value={data.total_pegawai}   icon="👥" color="blue"   /></div>
-                <div className="dashboard-item h-full"><StatCard label="Hadir"          value={t.hadir}             icon="✅" color="green"  /></div>
-                <div className="dashboard-item h-full"><StatCard label="Terlambat"      value={t.terlambat}         icon="⏰" color="yellow" /></div>
-                <div className="dashboard-item h-full"><StatCard label="Izin"           value={t.izin}              icon="📝" color="blue"   /></div>
-                <div className="dashboard-item h-full"><StatCard label="Alpha"          value={t.alpha}             icon="❌" color="red"    /></div>
-                <div className="dashboard-item h-full"><StatCard label="Pending Izin"   value={data.pending_izin}   icon="📋" color="violet" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Total Pegawai" value={data.total_pegawai}   icon={<Icon name="pegawai" />} color="blue"   /></div>
+                <div className="dashboard-item h-full"><StatCard label="Hadir"          value={t.hadir}             icon={<Icon name="hadir" />} color="green"  /></div>
+                <div className="dashboard-item h-full"><StatCard label="Terlambat"      value={t.terlambat}         icon={<Icon name="terlambat" />} color="yellow" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Izin"           value={t.izin}              icon={<Icon name="izin" />} color="blue"   /></div>
+                <div className="dashboard-item h-full"><StatCard label="Alpha"          value={t.alpha}             icon={<Icon name="alpha" />} color="red"    /></div>
+                <div className="dashboard-item h-full"><StatCard label="Pending Izin"   value={data.pending_izin}   icon={<Icon name="pending" />} color="violet" /></div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -234,28 +258,28 @@ function YayasanDashboard({ data }) {
                 <StatCard
                     label="Total Sekolah"
                     value={data.total_sekolah}
-                    icon="🏫"
+                    icon={<Icon name="sekolah" />}
                     color="blue"
                     sub="unit di bawah yayasan"
                 />
                 <StatCard
                     label="Total Pegawai Aktif"
                     value={data.total_pegawai}
-                    icon="👥"
+                    icon={<Icon name="pegawai" />}
                     color="violet"
                     sub="seluruh unit sekolah"
                 />
                 <StatCard
                     label="Hadir Hari Ini"
                     value={data.today_hadir}
-                    icon="✅"
+                    icon={<Icon name="hadir" />}
                     color="green"
                     sub="lintas semua sekolah"
                 />
                 <StatCard
                     label="Rata-rata Kehadiran"
                     value={`${data.avg_kehadiran ?? 0}%`}
-                    icon="📊"
+                    icon={<Icon name="chart" />}
                     color="amber"
                     sub="bulan ini, semua sekolah"
                 />
@@ -284,7 +308,7 @@ function YayasanDashboard({ data }) {
                         </ResponsiveContainer>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-sm gap-2">
-                            <span className="text-3xl">📉</span>
+                            <span className="text-slate-400"><Icon name="sad" className="w-10 h-10" /></span>
                             <span>Belum ada data presensi bulan ini</span>
                         </div>
                     )}
@@ -330,7 +354,7 @@ function YayasanDashboard({ data }) {
                             )
                         }) : (
                             <div className="text-center py-10 text-slate-500 text-sm">
-                                <p className="text-3xl mb-2">📭</p>
+                                <span className="flex justify-center text-slate-400 mb-2"><Icon name="sad" className="w-10 h-10" /></span>
                                 <p>Belum ada data kehadiran bulan ini</p>
                             </div>
                         )}
@@ -340,7 +364,7 @@ function YayasanDashboard({ data }) {
 
             {/* Executive Report shortcut */}
             <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-5 flex flex-wrap items-center gap-4">
-                <span className="text-3xl">📋</span>
+                <span className="text-amber-500"><Icon name="report" className="w-8 h-8" /></span>
                 <div className="flex-1 min-w-0">
                     <p className="text-amber-400 font-semibold">Executive Report Generator</p>
                     <p className="text-slate-400 text-sm mt-0.5">
@@ -376,12 +400,11 @@ export default function Dashboard() {
     return (
         <div className="p-6 max-w-7xl mx-auto">
             {/* Page Header */}
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold text-white">
-                    Selamat datang, {user?.nama_lengkap?.split(' ')[0]} 👋
-                </h2>
-                <p className="text-slate-400 mt-1">{now.format('dddd, D MMMM YYYY')}</p>
-            </div>
+            <PageHeader
+                title={`Selamat datang, ${user?.nama_lengkap?.split(' ')[0]} 👋`}
+                description={now.format('dddd, D MMMM YYYY')}
+                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>}
+            />
 
             {loading ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

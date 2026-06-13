@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Circle } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import PageHeader from '../../components/PageHeader'
 import api from '../../api/axios'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageTransition, animateTabSwitch } from '../../utils/usePageTransition'
@@ -669,10 +670,11 @@ export default function PresensiPage() {
     return (
         <div ref={pageRef} className="p-4 sm:p-6 max-w-2xl mx-auto space-y-5">
             {/* Header */}
-            <div>
-                <h2 className="text-2xl font-bold text-white">Presensi</h2>
-                <p className="text-slate-400 text-sm mt-0.5">{now.format('dddd, D MMMM YYYY · HH:mm')}</p>
-            </div>
+            <PageHeader 
+                title="Presensi" 
+                description={now.format('dddd, D MMMM YYYY · HH:mm')} 
+                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            />
 
             {/* ── Status Presensi / Libur ── */}
             {holiday ? (

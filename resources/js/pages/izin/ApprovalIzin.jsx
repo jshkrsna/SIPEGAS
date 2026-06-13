@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useLayoutEffect } from 'react'
 import api from '../../api/axios'
 import dayjs from 'dayjs'
 import { gsap } from 'gsap'
+import PageHeader from '../../components/PageHeader'
 
 const STATUS_STYLES = {
     pending:  'bg-amber-500/10 text-amber-400 border border-amber-500/20',
@@ -182,17 +183,11 @@ export default function ApprovalIzin() {
     return (
         <div className="p-4 sm:p-6 max-w-4xl mx-auto" ref={containerRef}>
             {/* Header */}
-            <div className="mb-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-400 text-xl sm:text-2xl">📋</span>
-                    </div>
-                    <div>
-                        <h2 className="text-xl sm:text-2xl font-bold text-white">Approval Izin & Cuti</h2>
-                        <p className="text-slate-400 text-sm mt-0.5">Review dan kelola pengajuan ketidakhadiran pegawai</p>
-                    </div>
-                </div>
-            </div>
+            <PageHeader 
+                title="Approval Izin & Cuti" 
+                description="Review dan kelola pengajuan ketidakhadiran pegawai" 
+                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>}
+            />
 
             {/* Filter tabs */}
             <div className="flex gap-2 mb-6">

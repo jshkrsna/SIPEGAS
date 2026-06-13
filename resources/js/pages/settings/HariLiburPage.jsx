@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/axios'
+import PageHeader from '../../components/PageHeader'
 import dayjs from 'dayjs'
 
 export default function HariLiburPage() {
@@ -36,22 +37,23 @@ export default function HariLiburPage() {
 
     return (
         <div className="p-6 max-w-3xl mx-auto">
-            <div className="mb-6 flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">Hari Libur</h2>
-                    <p className="text-slate-400 text-sm mt-1">Kalender libur sekolah</p>
-                </div>
-                <div className="flex gap-2">
-                    <select value={tahun} onChange={e => setTahun(+e.target.value)}
-                        className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                        {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                    <button onClick={() => setShowForm(s => !s)}
-                        className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-                        {showForm ? '✕' : '+ Tambah'}
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                title="Hari Libur"
+                description="Kalender libur sekolah"
+                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                action={
+                    <div className="flex gap-2">
+                        <select value={tahun} onChange={e => setTahun(+e.target.value)}
+                            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 shadow-lg shadow-blue-500/10">
+                            {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                        <button onClick={() => setShowForm(s => !s)}
+                            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20">
+                            {showForm ? '✕ Batal' : '+ Tambah'}
+                        </button>
+                    </div>
+                }
+            />
 
             {showForm && (
                 <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-5 grid grid-cols-1 sm:grid-cols-3 gap-4">

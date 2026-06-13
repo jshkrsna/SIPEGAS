@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/axios'
+import PageHeader from '../../components/PageHeader'
 import dayjs from 'dayjs'
 
 const STATUS_COLOR = {
@@ -37,21 +38,22 @@ export default function KalenderPresensi() {
 
     return (
         <div className="p-6 max-w-3xl mx-auto">
-            <div className="mb-6 flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold text-white">Kalender Presensi</h2>
-                    <p className="text-slate-400 text-sm mt-1">Visualisasi kehadiran bulanan</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => {
-                        if (month === 0) { setMonth(11); setYear(y => y - 1) } else setMonth(m => m - 1)
-                    }} className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">←</button>
-                    <span className="text-white font-medium px-2">{dayjs().year(year).month(month).format('MMMM YYYY')}</span>
-                    <button onClick={() => {
-                        if (month === 11) { setMonth(0); setYear(y => y + 1) } else setMonth(m => m + 1)
-                    }} className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">→</button>
-                </div>
-            </div>
+            <PageHeader
+                title="Kalender Presensi"
+                description="Visualisasi kehadiran bulanan"
+                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                action={
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => {
+                            if (month === 0) { setMonth(11); setYear(y => y - 1) } else setMonth(m => m - 1)
+                        }} className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">←</button>
+                        <span className="text-white font-medium px-2">{dayjs().year(year).month(month).format('MMMM YYYY')}</span>
+                        <button onClick={() => {
+                            if (month === 11) { setMonth(0); setYear(y => y + 1) } else setMonth(m => m + 1)
+                        }} className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">→</button>
+                    </div>
+                }
+            />
 
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                 {/* Day Headers */}
