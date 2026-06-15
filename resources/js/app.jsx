@@ -4,6 +4,7 @@ import { useAuth } from './contexts/AuthContext'
 import DashboardLayout from './layouts/DashboardLayout'
 import AuthLayout from './layouts/AuthLayout'
 import Login from './pages/auth/Login'
+import ForgotPassword from './pages/auth/ForgotPassword'
 import Dashboard from './pages/Dashboard'
 import PresensiPage from './pages/presensi/PresensiPage'
 import RiwayatPresensi from './pages/presensi/RiwayatPresensi'
@@ -51,6 +52,7 @@ export default function App() {
             {/* Public */}
             <Route element={<AuthLayout />}>
                 <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
+                <Route path="/forgot-password" element={user ? <Navigate to="/dashboard" /> : <ForgotPassword />} />
             </Route>
 
             {/* Protected */}

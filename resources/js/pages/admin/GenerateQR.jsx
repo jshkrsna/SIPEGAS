@@ -88,7 +88,7 @@ export default function GenerateQR() {
                                 includeMargin={false}
                                 fgColor="#0f172a"
                                 imageSettings={{
-                                    src: "/favicon.svg",
+                                    src: "/images/logo-hitam.png",
                                     height: 56,
                                     width: 56,
                                     excavate: true,

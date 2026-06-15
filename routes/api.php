@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Route;
 // ─── Auth (Public) ───────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [\App\Http\Controllers\Api\PasswordResetController::class, 'forgotPassword']);
+    Route::post('/reset-password', [\App\Http\Controllers\Api\PasswordResetController::class, 'resetPassword']);
 });
 
 // ─── Authenticated Routes ─────────────────────────────────────────────────────

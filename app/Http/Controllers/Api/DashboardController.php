@@ -32,8 +32,12 @@ class DashboardController extends Controller
     {
         $month   = Carbon::now()->month;
         $year    = Carbon::now()->year;
-        $rekap   = RekapBulanan::where('pengguna_id', $user->id)
-            ->where('bulan', $month)->where('tahun', $year)->first();
+        
+        $monthStats = Presensi::where('pengguna_id', $user->id)
+            ->whereMonth('tanggal', $month)->whereYear('tanggal', $year)
+            ->select('status_kehadiran', DB::raw('count(*) as total'), DB::raw('sum(terlambat_menit) as total_menit'))
+            ->groupBy('status_kehadiran')
+            ->get();
 
         $todayPresensi = Presensi::where('pengguna_id', $user->id)
             ->whereDate('tanggal', $today)->first();
@@ -47,12 +51,12 @@ class DashboardController extends Controller
                 'role'            => 'pegawai',
                 'today_presensi'  => $todayPresensi,
                 'bulan_ini'       => [
-                    'hadir'           => $rekap?->total_hadir ?? 0,
-                    'terlambat'       => $rekap?->total_terlambat ?? 0,
-                    'izin'            => $rekap?->total_izin ?? 0,
-                    'cuti'            => $rekap?->total_cuti ?? 0,
-                    'alpha'           => $rekap?->total_alpha ?? 0,
-                    'menit_terlambat' => $rekap?->total_menit_terlambat ?? 0,
+                    'hadir'           => $monthStats->where('status_kehadiran', 'hadir')->sum('total'),
+                    'terlambat'       => $monthStats->where('status_kehadiran', 'terlambat')->sum('total'),
+                    'izin'            => $monthStats->where('status_kehadiran', 'izin')->sum('total'),
+                    'cuti'            => $monthStats->where('status_kehadiran', 'cuti')->sum('total'),
+                    'alpha'           => $monthStats->where('status_kehadiran', 'alpha')->sum('total'),
+                    'menit_terlambat' => $monthStats->where('status_kehadiran', 'terlambat')->sum('total_menit'),
                 ],
                 'pending_izin'    => $pendingIzin,
             ],
@@ -72,7 +76,11 @@ class DashboardController extends Controller
             ->pluck('total', 'status_kehadiran');
 
         $hadir     = $todayStats->get('hadir', 0) + $todayStats->get('terlambat', 0);
-        $belumHadir = $totalPegawai - $hadir - ($todayStats->get('izin', 0) + $todayStats->get('cuti', 0));
+        $izinCount = $todayStats->get('izin', 0);
+        $cutiCount = $todayStats->get('cuti', 0);
+        $alphaCount = $todayStats->get('alpha', 0);
+
+        $belumHadir = $totalPegawai - $hadir - $izinCount - $cutiCount - $alphaCount;
 
         $pendingIzin = IzinCuti::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
             ->where('status_approval', 'pending')->count();
@@ -100,9 +108,9 @@ class DashboardController extends Controller
                 'today'          => [
                     'hadir'      => $hadir,
                     'terlambat'  => $todayStats->get('terlambat', 0),
-                    'izin'       => $todayStats->get('izin', 0),
-                    'cuti'       => $todayStats->get('cuti', 0),
-                    'alpha'      => $todayStats->get('alpha', 0),
+                    'izin'       => $izinCount,
+                    'cuti'       => $cutiCount,
+                    'alpha'      => $alphaCount,
                     'belum_hadir' => max(0, $belumHadir),
                 ],
                 'pending_izin'   => $pendingIzin,

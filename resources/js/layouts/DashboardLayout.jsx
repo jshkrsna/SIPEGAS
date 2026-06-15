@@ -86,21 +86,21 @@ const Sidebar = ({ mobile = false, isCollapsed, setIsCollapsed, user, items, log
     }, [isCollapsed, mobile])
 
     return (
-        <aside ref={sidebarRef} className={`flex flex-col h-full bg-slate-900 border-r border-slate-800 ${mobile ? 'w-full' : 'w-64'} overflow-hidden relative`}>
+        <aside ref={sidebarRef} className={`flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 ${mobile ? 'w-full' : 'w-64'} overflow-hidden relative`}>
             
             {/* Logo & Toggle */}
-            <div className={`flex items-center px-4 py-5 border-b border-slate-800 h-[73px] ${isCollapsed && !mobile ? 'justify-center' : 'justify-between'}`}>
-                <div className={`flex items-center gap-3 sidebar-text ${isCollapsed && !mobile ? 'hidden' : ''}`}>
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">S</div>
-                    <div className="whitespace-nowrap min-w-0">
-                        <h1 className="text-white font-semibold text-sm">SIPEGAS</h1>
+            <div className={`flex items-center px-4 py-5 border-b border-slate-200 dark:border-slate-800 h-[73px] ${isCollapsed && !mobile ? 'justify-center' : 'justify-between'}`}>
+                <div className={`flex items-center sidebar-text ${isCollapsed && !mobile ? 'hidden' : ''}`}>
+                    <div className="h-8 flex items-center justify-center flex-shrink-0">
+                        <img src="/images/logo-hitam.png" alt="SIPEGAS" className="h-full w-auto block dark:hidden" />
+                        <img src="/images/logo-putih.png" alt="SIPEGAS" className="h-full w-auto hidden dark:block" />
                     </div>
                 </div>
                 
                 {!mobile && (
                     <button 
                         onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors flex-shrink-0 flex items-center gap-1"
+                        className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0 flex items-center gap-1"
                         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
                         {/* Panel Icon */}
@@ -117,11 +117,11 @@ const Sidebar = ({ mobile = false, isCollapsed, setIsCollapsed, user, items, log
             </div>
 
             {/* User info */}
-            <div className={`px-4 py-4 border-b border-slate-800 flex justify-center`}>
+            <div className={`px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-center`}>
                 <NavLink to="/profil" onClick={() => mobile && setSidebarOpen(false)} title={isCollapsed && !mobile ? "Profil" : undefined} className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl transition-all ${isActive ? 'bg-blue-600/20 border border-blue-500/30' : 'bg-slate-800/50 hover:bg-slate-800 border border-transparent hover:border-slate-700'} ${isCollapsed && !mobile ? 'p-2 justify-center w-12 h-12' : 'p-3 w-full'}`
+                    `flex items-center gap-3 rounded-xl transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-600/20 border border-blue-200 dark:border-blue-500/30' : 'bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700'} ${isCollapsed && !mobile ? 'p-2 justify-center w-12 h-12' : 'p-3 w-full'}`
                 }>
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden shadow-sm">
                         {user?.foto_profil_url ? (
                             <img src={user.foto_profil_url} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
@@ -129,7 +129,7 @@ const Sidebar = ({ mobile = false, isCollapsed, setIsCollapsed, user, items, log
                         )}
                     </div>
                     <div className={`sidebar-text min-w-0 whitespace-nowrap ${isCollapsed && !mobile ? 'hidden' : ''}`}>
-                        <p className="text-white text-sm font-medium truncate">{user?.nama_lengkap}</p>
+                        <p className="text-slate-800 dark:text-white text-sm font-medium truncate">{user?.nama_lengkap}</p>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${roleBadgeColor[user?.role]}`}>
                             {roleLabel[user?.role]}
                         </span>
@@ -149,8 +149,8 @@ const Sidebar = ({ mobile = false, isCollapsed, setIsCollapsed, user, items, log
                         {...navHover}
                         className={({ isActive }) =>
                             `flex items-center gap-3 rounded-lg text-sm font-medium transition-colors duration-150 ${isActive
-                                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent'
+                                ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent'
                             } ${isCollapsed && !mobile ? 'justify-center p-2.5 mx-auto w-10 h-10' : 'px-3 py-2.5'}`
                         }
                     >
@@ -161,12 +161,12 @@ const Sidebar = ({ mobile = false, isCollapsed, setIsCollapsed, user, items, log
             </nav>
 
             {/* Logout */}
-            <div className="px-3 py-4 border-t border-slate-800 flex justify-center">
+            <div className="px-3 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-center">
                 <button
                     onClick={handleLogout}
                     disabled={loggingOut}
                     title={isCollapsed && !mobile ? "Keluar" : undefined}
-                    className={`border border-red-500/50 flex items-center justify-center gap-3 rounded-lg text-sm font-medium text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 transition-all duration-150 cursor-pointer ${isCollapsed && !mobile ? 'w-10 h-10 p-0 mx-auto' : 'w-full px-3 py-2.5'}`}
+                    className={`border border-red-500/50 flex items-center justify-center gap-3 rounded-lg text-sm font-medium text-red-600 dark:text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 transition-all duration-150 cursor-pointer ${isCollapsed && !mobile ? 'w-10 h-10 p-0 mx-auto' : 'w-full px-3 py-2.5'}`}
                 >
                     {Icons.Keluar}
                     <span className={`sidebar-text whitespace-nowrap ${isCollapsed && !mobile ? 'hidden' : ''}`}>
@@ -196,7 +196,7 @@ export default function DashboardLayout() {
     }
 
     return (
-        <div className="flex h-screen bg-slate-950 overflow-hidden">
+        <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
             {/* Desktop Sidebar */}
             <div className="hidden md:flex md:flex-shrink-0">
                 <Sidebar 
@@ -234,18 +234,20 @@ export default function DashboardLayout() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* Mobile Topbar */}
-                <header className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
+                <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                     <button
                         onClick={() => setSidebarOpen(true)}
-                        className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                        className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold text-xs">S</div>
-                        <span className="text-white font-semibold text-sm">SIPEGAS</span>
+                        <div className="h-6 flex items-center justify-center flex-shrink-0">
+                            <img src="/images/logo-hitam.png" alt="SIPEGAS" className="h-full w-auto block dark:hidden" />
+                            <img src="/images/logo-putih.png" alt="SIPEGAS" className="h-full w-auto hidden dark:block" />
+                        </div>
                     </div>
                     <NavLink to="/profil" className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-sm font-semibold hover:ring-2 hover:ring-blue-500 transition-all overflow-hidden">
                         {user?.foto_profil_url ? (

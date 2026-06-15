@@ -43,20 +43,20 @@ const Icon = ({ name, className = "w-7 h-7" }) => {
 
 function StatCard({ label, value, icon, color = 'blue', sub }) {
     const colors = {
-        blue:   'from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-400',
-        green:  'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30 text-emerald-400',
-        yellow: 'from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-400',
-        red:    'from-red-500/20 to-red-600/10 border-red-500/30 text-red-400',
-        violet: 'from-violet-500/20 to-violet-600/10 border-violet-500/30 text-violet-400',
-        amber:  'from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-400',
+        blue:   'from-blue-50 dark:from-blue-500/20 to-white dark:to-blue-600/10 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400',
+        green:  'from-emerald-50 dark:from-emerald-500/20 to-white dark:to-emerald-600/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
+        yellow: 'from-amber-50 dark:from-amber-500/20 to-white dark:to-amber-600/10 border-amber-200 dark:border-amber-500/30 text-amber-600 dark:text-amber-400',
+        red:    'from-red-50 dark:from-red-500/20 to-white dark:to-red-600/10 border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400',
+        violet: 'from-violet-50 dark:from-violet-500/20 to-white dark:to-violet-600/10 border-violet-200 dark:border-violet-500/30 text-violet-600 dark:text-violet-400',
+        amber:  'from-amber-50 dark:from-amber-500/20 to-white dark:to-amber-600/10 border-amber-200 dark:border-amber-500/30 text-amber-600 dark:text-amber-400',
     }
     return (
-        <div className={`bg-gradient-to-br ${colors[color]} border rounded-xl p-4 flex items-center gap-3 h-full`}>
+        <div className={`bg-gradient-to-br ${colors[color]} border rounded-xl p-4 flex items-center gap-3 h-full shadow-sm dark:shadow-none`}>
             <span className="flex-shrink-0">{icon}</span>
             <div className="min-w-0 flex-1">
-                <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider truncate" title={label}>{label}</p>
-                <p className="text-white text-2xl font-bold mt-0.5">{value ?? '—'}</p>
-                {sub && <p className="text-slate-500 text-[11px] mt-0.5 truncate" title={sub}>{sub}</p>}
+                <p className="text-slate-500 dark:text-slate-400 text-[11px] font-medium uppercase tracking-wider truncate" title={label}>{label}</p>
+                <p className="text-slate-800 dark:text-white text-2xl font-bold mt-0.5">{value ?? '—'}</p>
+                {sub && <p className="text-slate-400 dark:text-slate-500 text-[11px] mt-0.5 truncate" title={sub}>{sub}</p>}
             </div>
         </div>
     )
@@ -90,23 +90,23 @@ function GuruDashboard({ data }) {
         <div ref={containerRef} className="space-y-6">
             {/* Today Status */}
             <div className={`dashboard-item rounded-xl p-5 border flex items-center gap-4 ${
-                today ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-800/50 border-slate-700 text-amber-400'
+                today ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-amber-600 dark:text-amber-400'
             }`}>
                 <span className="flex-shrink-0">
                     <Icon name={today ? 'hadir' : 'terlambat'} className="w-10 h-10" />
                 </span>
                 <div>
-                    <p className="text-slate-400 text-sm">Status Hari Ini</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Status Hari Ini</p>
                     {today ? (
                         <>
-                            <p className="text-white font-semibold text-lg capitalize">{today.status_kehadiran}</p>
-                            <p className="text-slate-400 text-sm">
+                            <p className="text-slate-800 dark:text-white font-semibold text-lg capitalize">{today.status_kehadiran}</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm">
                                 Masuk: {dayjs(today.waktu_checkin).format('HH:mm')}
                                 {today.waktu_checkout && ` · Pulang: ${dayjs(today.waktu_checkout).format('HH:mm')}`}
                             </p>
                         </>
                     ) : (
-                        <p className="text-white font-semibold text-lg">Belum Presensi</p>
+                        <p className="text-slate-800 dark:text-white font-semibold text-lg">Belum Presensi</p>
                     )}
                 </div>
                 {!today && (
@@ -127,8 +127,8 @@ function GuruDashboard({ data }) {
 
             {/* Chart */}
             {pieData.length > 0 && (
-                <div className="dashboard-item bg-slate-900 border border-slate-800 rounded-xl p-5">
-                    <h3 className="text-white font-semibold mb-4">Rekap Bulan Ini</h3>
+                <div className="dashboard-item bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none">
+                    <h3 className="text-slate-800 dark:text-white font-semibold mb-4">Rekap Bulan Ini</h3>
                     <ResponsiveContainer width="100%" height={200}>
                         <PieChart>
                             <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70}
@@ -142,11 +142,11 @@ function GuruDashboard({ data }) {
             )}
 
             {data.pending_izin > 0 && (
-                <div className="dashboard-item bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-3">
-                    <span className="text-amber-400"><Icon name="pending" className="w-8 h-8" /></span>
+                <div className="dashboard-item bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-4 flex items-center gap-3">
+                    <span className="text-amber-500 dark:text-amber-400"><Icon name="pending" className="w-8 h-8" /></span>
                     <div>
-                        <p className="text-amber-400 font-medium">{data.pending_izin} pengajuan izin masih pending</p>
-                        <a href="/izin" className="text-amber-300 text-sm hover:underline">Lihat status →</a>
+                        <p className="text-amber-600 dark:text-amber-400 font-medium">{data.pending_izin} pengajuan izin masih pending</p>
+                        <a href="/izin" className="text-amber-500 dark:text-amber-300 text-sm hover:underline">Lihat status →</a>
                     </div>
                 </div>
             )}
@@ -191,14 +191,14 @@ function AdminDashboard({ data }) {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Weekly Trend */}
-                <div className="dashboard-item bg-slate-900 border border-slate-800 rounded-xl p-5">
-                    <h3 className="text-white font-semibold mb-4">Tren Kehadiran 7 Hari</h3>
+                <div className="dashboard-item bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none">
+                    <h3 className="text-slate-800 dark:text-white font-semibold mb-4">Tren Kehadiran 7 Hari</h3>
                     <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={barData}>
                             <XAxis dataKey="date" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                             <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                             <Tooltip 
-                                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                                cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
                                 contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }} 
                             />
                             <Bar dataKey="hadir"     fill={STATUS_COLORS.hadir}     radius={[2, 2, 0, 0]} name="Hadir"     />
@@ -209,26 +209,26 @@ function AdminDashboard({ data }) {
                 </div>
 
                 {/* Recent Checkins */}
-                <div className="dashboard-item bg-slate-900 border border-slate-800 rounded-xl p-5">
-                    <h3 className="text-white font-semibold mb-4">Check-in Terkini</h3>
+                <div className="dashboard-item bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none">
+                    <h3 className="text-slate-800 dark:text-white font-semibold mb-4">Check-in Terkini</h3>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                         {(data.recent_checkins || []).map(p => (
-                            <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                            <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                                     {p.pengguna?.nama_lengkap?.charAt(0) || '?'}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-white text-sm truncate">{p.pengguna?.nama_lengkap}</p>
-                                    <p className="text-slate-400 text-xs">
+                                    <p className="text-slate-800 dark:text-white text-sm truncate">{p.pengguna?.nama_lengkap}</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-xs">
                                         {dayjs(p.waktu_checkin).format('HH:mm')} · <span className={`capitalize ${
-                                            p.status_kehadiran === 'hadir' ? 'text-emerald-400' : 'text-amber-400'
+                                            p.status_kehadiran === 'hadir' ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'
                                         }`}>{p.status_kehadiran}</span>
                                     </p>
                                 </div>
                             </div>
                         ))}
                         {(!data.recent_checkins || data.recent_checkins.length === 0) && (
-                            <p className="text-slate-500 text-sm text-center py-4">Belum ada check-in hari ini</p>
+                            <p className="text-slate-400 dark:text-slate-500 text-sm text-center py-4">Belum ada check-in hari ini</p>
                         )}
                     </div>
                 </div>
@@ -287,16 +287,16 @@ function YayasanDashboard({ data }) {
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {/* Grafik Komparatif */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-                    <h3 className="text-white font-semibold mb-1">Grafik Komparatif Kehadiran</h3>
-                    <p className="text-slate-500 text-xs mb-4">Performa kedisiplinan antar unit sekolah — bulan ini</p>
+                <div className="dashboard-item bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none">
+                    <h3 className="text-slate-800 dark:text-white font-semibold mb-1">Grafik Komparatif Kehadiran</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">Performa kedisiplinan antar unit sekolah — bulan ini</p>
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={220}>
                             <BarChart data={chartData} barCategoryGap="30%">
                                 <XAxis dataKey="name" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                                 <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                                 <Tooltip
-                                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                                    cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
                                     contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                     formatter={(val, name) => [val, name]}
                                 />
@@ -307,7 +307,7 @@ function YayasanDashboard({ data }) {
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-sm gap-2">
+                        <div className="flex flex-col items-center justify-center h-48 text-slate-500 dark:text-slate-400 text-sm gap-2">
                             <span className="text-slate-400"><Icon name="sad" className="w-10 h-10" /></span>
                             <span>Belum ada data presensi bulan ini</span>
                         </div>
@@ -315,38 +315,38 @@ function YayasanDashboard({ data }) {
                 </div>
 
                 {/* Leaderboard Kedisiplinan */}
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-                    <h3 className="text-white font-semibold mb-1">Leaderboard Kedisiplinan</h3>
-                    <p className="text-slate-500 text-xs mb-4">Peringkat unit sekolah berdasarkan % kehadiran tertinggi</p>
-                    <div className="space-y-2">
+                <div className="dashboard-item bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none flex flex-col">
+                    <h3 className="text-slate-800 dark:text-white font-semibold mb-1">Leaderboard Kedisiplinan</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">Peringkat unit sekolah berdasarkan % kehadiran tertinggi</p>
+                    <div className="flex-1 space-y-3 overflow-y-auto max-h-[300px]">
                         {perSekolah.length > 0 ? perSekolah.map((s, i) => {
                             const pct  = s.bulan?.pct_hadir ?? 0
                             const barW = `${Math.max(pct, 3)}%`
                             const barColor = pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-amber-500' : 'bg-red-500'
-                            const pctColor = pct >= 90 ? 'text-emerald-400' : pct >= 75 ? 'text-amber-400' : 'text-red-400'
+                            const pctColor = pct >= 90 ? 'text-emerald-500 dark:text-emerald-400' : pct >= 75 ? 'text-amber-500 dark:text-amber-400' : 'text-red-500 dark:text-red-400'
                             return (
                                 <div key={s.id}
-                                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 hover:bg-slate-800/80 border border-transparent hover:border-slate-700 transition-all duration-200">
+                                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-slate-100 dark:border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-200">
                                     {/* Rank badge */}
                                     <div className="w-8 text-center text-lg flex-shrink-0">
-                                        {RANK_MEDAL[i] ?? <span className="text-slate-500 text-sm font-bold">#{i + 1}</span>}
+                                        {RANK_MEDAL[i] ?? <span className="text-slate-400 dark:text-slate-500 text-sm font-bold">#{i + 1}</span>}
                                     </div>
                                     {/* School info */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-1">
-                                            <p className="text-white text-sm font-medium truncate">{s.nama_sekolah}</p>
+                                            <p className="text-slate-800 dark:text-white text-sm font-medium truncate">{s.nama_sekolah}</p>
                                             <span className={`text-xs font-bold ml-2 flex-shrink-0 ${pctColor}`}>{pct}%</span>
                                         </div>
                                         {/* Progress bar */}
-                                        <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                        <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                                             <div className={`h-full rounded-full transition-all duration-700 ${barColor}`}
                                                 style={{ width: barW }} />
                                         </div>
                                         <div className="flex gap-3 mt-1.5">
-                                            <span className="text-slate-500 text-xs">{s.total_pegawai} pegawai</span>
-                                            <span className="text-emerald-500 text-xs">✓ {s.bulan?.hadir ?? 0} hadir</span>
+                                            <span className="text-slate-500 dark:text-slate-400 text-xs">{s.total_pegawai} pegawai</span>
+                                            <span className="text-emerald-600 dark:text-emerald-500 text-xs">✓ {s.bulan?.hadir ?? 0} hadir</span>
                                             {(s.bulan?.alpha ?? 0) > 0 && (
-                                                <span className="text-red-500 text-xs">✗ {s.bulan.alpha} alpha</span>
+                                                <span className="text-red-600 dark:text-red-500 text-xs">✗ {s.bulan.alpha} alpha</span>
                                             )}
                                         </div>
                                     </div>

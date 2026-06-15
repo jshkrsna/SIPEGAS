@@ -2,10 +2,9 @@ import React, { useEffect, useState, useRef, useLayoutEffect } from 'react'
 import api from '../../api/axios'
 import dayjs from 'dayjs'
 import { gsap } from 'gsap'
-import PageHeader from '../../components/PageHeader'
 
 const STATUS_STYLES = {
-    pending:  'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+    pending: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
     approved: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
     rejected: 'bg-red-500/10 text-red-400 border border-red-500/20',
 }
@@ -26,12 +25,12 @@ export default function ApprovalIzin() {
         try {
             const { data } = await api.get('/izin-cuti', { params: { status: filter } })
             setList(data.data?.data || [])
-        } catch {}
+        } catch { }
         finally { setLoading(false) }
     }
 
-    useEffect(() => { 
-        fetchList() 
+    useEffect(() => {
+        fetchList()
     }, [filter])
 
     useLayoutEffect(() => {
@@ -98,7 +97,7 @@ export default function ApprovalIzin() {
                         </h3>
                         <button onClick={() => setModalItem(null)} className="text-slate-400 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700">✕</button>
                     </div>
-                    
+
                     <div className="p-5 sm:p-6 overflow-y-auto flex-1">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold flex-shrink-0 text-xl shadow-inner">
@@ -121,7 +120,7 @@ export default function ApprovalIzin() {
                                     <p className="text-slate-200 font-medium">{dayjs(modalItem.tanggal_selesai).diff(modalItem.tanggal_mulai, 'day') + 1} hari</p>
                                 </div>
                             </div>
-                            
+
                             <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
                                 <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Tanggal</p>
                                 <p className="text-slate-200 font-medium">{dayjs(modalItem.tanggal_mulai).format('DD MMM YYYY')} — {dayjs(modalItem.tanggal_selesai).format('DD MMM YYYY')}</p>
@@ -161,7 +160,7 @@ export default function ApprovalIzin() {
                                 <textarea rows={2} value={catatan} onChange={e => setCatatan(e.target.value)}
                                     placeholder="Tuliskan pesan persetujuan / penolakan..."
                                     className="w-full bg-slate-800/50 border border-slate-700 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 resize-none mb-5 transition-colors" />
-                                
+
                                 <div className="flex gap-3">
                                     <button onClick={() => handleApproval('approved')} disabled={processing}
                                         className="flex-1 py-3 rounded-xl text-white font-semibold text-sm transition-colors shadow-lg bg-[#10b981] hover:bg-[#059669] shadow-emerald-600/20 disabled:opacity-50">
@@ -183,19 +182,24 @@ export default function ApprovalIzin() {
     return (
         <div className="p-4 sm:p-6 max-w-4xl mx-auto" ref={containerRef}>
             {/* Header */}
-            <PageHeader 
-                title="Approval Izin & Cuti" 
-                description="Review dan kelola pengajuan ketidakhadiran pegawai" 
-                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>}
-            />
+            <div className="mb-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-blue-400 text-xl sm:text-2xl">📋</span>
+                    </div>
+                    <div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">Approval Izin & Cuti</h2>
+                        <p className="text-slate-400 text-sm mt-0.5">Review dan kelola pengajuan ketidakhadiran pegawai</p>
+                    </div>
+                </div>
+            </div>
 
             {/* Filter tabs */}
             <div className="flex gap-2 mb-6">
                 {['pending', 'approved', 'rejected'].map(s => (
                     <button key={s} onClick={() => setFilter(s)}
-                        className={`px-5 py-2.5 rounded-xl text-sm font-medium capitalize transition-all ${
-                            filter === s ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                        }`}>
+                        className={`px-5 py-2.5 rounded-xl text-sm font-medium capitalize transition-all ${filter === s ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                            }`}>
                         {s}
                     </button>
                 ))}
