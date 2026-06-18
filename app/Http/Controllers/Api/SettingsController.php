@@ -13,16 +13,23 @@ use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
+    private function getSekolahId(Request $request)
+    {
+        return $request->sekolah_id ?? $request->user()->sekolah_id;
+    }
+
     // ─── Jam Kerja ───────────────────────────────────────────────────────────
 
     public function indexJamKerja(Request $request): JsonResponse
     {
-        $data = JamKerja::where('sekolah_id', $request->user()->sekolah_id)->get();
+        $sekolahId = $this->getSekolahId($request);
+        $data = JamKerja::where('sekolah_id', $sekolahId)->get();
         return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function storeJamKerja(Request $request): JsonResponse
     {
+        $sekolahId = $this->getSekolahId($request);
         $request->validate([
             'nama_shift'       => 'required|string|max:50',
             'jam_masuk'        => 'required|date_format:H:i',
@@ -32,11 +39,11 @@ class SettingsController extends Controller
         ]);
 
         if ($request->get('is_default', false)) {
-            JamKerja::where('sekolah_id', $request->user()->sekolah_id)->update(['is_default' => 0]);
+            JamKerja::where('sekolah_id', $sekolahId)->update(['is_default' => 0]);
         }
 
         $jam = JamKerja::create([
-            'sekolah_id'      => $request->user()->sekolah_id,
+            'sekolah_id'      => $sekolahId,
             'nama_shift'      => $request->nama_shift,
             'jam_masuk'       => $request->jam_masuk . ':00',
             'jam_pulang'      => $request->jam_pulang . ':00',
@@ -49,14 +56,16 @@ class SettingsController extends Controller
 
     public function updateJamKerja(Request $request, string $id): JsonResponse
     {
-        $jam = JamKerja::where('sekolah_id', $request->user()->sekolah_id)->findOrFail($id);
+        $sekolahId = $this->getSekolahId($request);
+        $jam = JamKerja::where('sekolah_id', $sekolahId)->findOrFail($id);
         $jam->update($request->only(['nama_shift', 'jam_masuk', 'jam_pulang', 'toleransi_menit', 'is_default']));
         return response()->json(['success' => true, 'data' => $jam]);
     }
 
     public function destroyJamKerja(Request $request, string $id): JsonResponse
     {
-        JamKerja::where('sekolah_id', $request->user()->sekolah_id)->findOrFail($id)->delete();
+        $sekolahId = $this->getSekolahId($request);
+        JamKerja::where('sekolah_id', $sekolahId)->findOrFail($id)->delete();
         return response()->json(['success' => true, 'message' => 'Shift dihapus.']);
     }
 
@@ -64,7 +73,8 @@ class SettingsController extends Controller
 
     public function indexHariLibur(Request $request): JsonResponse
     {
-        $query = HariLibur::where('sekolah_id', $request->user()->sekolah_id);
+        $sekolahId = $this->getSekolahId($request);
+        $query = HariLibur::where('sekolah_id', $sekolahId);
         if ($request->filled('tahun')) {
             $query->whereYear('tanggal', $request->tahun);
         }
@@ -73,6 +83,7 @@ class SettingsController extends Controller
 
     public function storeHariLibur(Request $request): JsonResponse
     {
+        $sekolahId = $this->getSekolahId($request);
         $request->validate([
             'tanggal'    => 'required|date',
             'nama_libur' => 'required|string|max:200',
@@ -80,7 +91,7 @@ class SettingsController extends Controller
         ]);
 
         $libur = HariLibur::create([
-            'sekolah_id'  => $request->user()->sekolah_id,
+            'sekolah_id'  => $sekolahId,
             'created_by'  => $request->user()->id,
             'tanggal'     => $request->tanggal,
             'nama_libur'  => $request->nama_libur,
@@ -92,7 +103,8 @@ class SettingsController extends Controller
 
     public function destroyHariLibur(Request $request, string $id): JsonResponse
     {
-        HariLibur::where('sekolah_id', $request->user()->sekolah_id)->findOrFail($id)->delete();
+        $sekolahId = $this->getSekolahId($request);
+        HariLibur::where('sekolah_id', $sekolahId)->findOrFail($id)->delete();
         return response()->json(['success' => true, 'message' => 'Hari libur dihapus.']);
     }
 
@@ -100,12 +112,14 @@ class SettingsController extends Controller
 
     public function indexGps(Request $request): JsonResponse
     {
-        $data = GpsReferensi::where('sekolah_id', $request->user()->sekolah_id)->get();
+        $sekolahId = $this->getSekolahId($request);
+        $data = GpsReferensi::where('sekolah_id', $sekolahId)->get();
         return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function storeGps(Request $request): JsonResponse
     {
+        $sekolahId = $this->getSekolahId($request);
         $request->validate([
             'nama_lokasi'  => 'nullable|string|max:100',
             'lat'          => 'required|numeric|between:-90,90',
@@ -114,7 +128,7 @@ class SettingsController extends Controller
         ]);
 
         $gps = GpsReferensi::create([
-            'sekolah_id'   => $request->user()->sekolah_id,
+            'sekolah_id'   => $sekolahId,
             'nama_lokasi'  => $request->nama_lokasi,
             'lat'          => $request->lat,
             'lng'          => $request->lng,
@@ -127,14 +141,16 @@ class SettingsController extends Controller
 
     public function updateGps(Request $request, string $id): JsonResponse
     {
-        $gps = GpsReferensi::where('sekolah_id', $request->user()->sekolah_id)->findOrFail($id);
+        $sekolahId = $this->getSekolahId($request);
+        $gps = GpsReferensi::where('sekolah_id', $sekolahId)->findOrFail($id);
         $gps->update($request->only(['nama_lokasi', 'lat', 'lng', 'radius_meter', 'is_active']));
         return response()->json(['success' => true, 'data' => $gps]);
     }
 
     public function destroyGps(Request $request, string $id): JsonResponse
     {
-        GpsReferensi::where('sekolah_id', $request->user()->sekolah_id)->findOrFail($id)->delete();
+        $sekolahId = $this->getSekolahId($request);
+        GpsReferensi::where('sekolah_id', $sekolahId)->findOrFail($id)->delete();
         return response()->json(['success' => true, 'message' => 'Lokasi GPS dihapus.']);
     }
 
@@ -142,19 +158,21 @@ class SettingsController extends Controller
 
     public function indexJabatan(Request $request): JsonResponse
     {
-        $data = Jabatan::where('sekolah_id', $request->user()->sekolah_id)->get();
+        $sekolahId = $this->getSekolahId($request);
+        $data = Jabatan::where('sekolah_id', $sekolahId)->get();
         return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function storeJabatan(Request $request): JsonResponse
     {
+        $sekolahId = $this->getSekolahId($request);
         $request->validate([
             'nama_jabatan' => 'required|string|max:150',
             'kode_jabatan' => 'required|string|max:20',
         ]);
 
         $jabatan = Jabatan::create([
-            'sekolah_id'   => $request->user()->sekolah_id,
+            'sekolah_id'   => $sekolahId,
             'nama_jabatan' => $request->nama_jabatan,
             'kode_jabatan' => $request->kode_jabatan,
         ]);

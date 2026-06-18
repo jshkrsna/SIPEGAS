@@ -17,7 +17,12 @@ class PenggunaController extends Controller
         $query = Pengguna::with(['jabatan:id,nama_jabatan', 'sekolah:id,nama_sekolah']);
 
         if ($user->isAdmin()) {
-            $query->where('sekolah_id', $user->sekolah_id);
+            // If a specific sekolah_id is requested, filter by that (cross-school within same yayasan)
+            if ($request->filled('sekolah_id')) {
+                $query->where('sekolah_id', $request->sekolah_id);
+            } else {
+                $query->where('sekolah_id', $user->sekolah_id);
+            }
         }
 
         if ($request->filled('role')) {
@@ -35,7 +40,7 @@ class PenggunaController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $query->orderBy('nama_lengkap')->paginate(20),
+            'data'    => $query->orderBy('nama_lengkap')->paginate(50),
         ]);
     }
 
@@ -56,8 +61,10 @@ class PenggunaController extends Controller
             'role.in'      => 'Pilihan role tidak valid.',
         ]);
 
+        $sekolahId = $request->sekolah_id ?? $request->user()->sekolah_id;
+
         $pengguna = Pengguna::create([
-            'sekolah_id'    => $request->user()->sekolah_id,
+            'sekolah_id'    => $sekolahId,
             'jabatan_id'    => $request->jabatan_id,
             'nip'           => $request->nip,
             'nama_lengkap'  => $request->nama_lengkap,

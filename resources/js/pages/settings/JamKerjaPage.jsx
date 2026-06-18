@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/axios'
-import PageHeader from '../../components/PageHeader'
 
-export default function JamKerjaPage() {
+export default function JamKerjaView({ sekolahId }) {
     const [list, setList] = useState([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
@@ -12,18 +11,18 @@ export default function JamKerjaPage() {
 
     const fetch = async () => {
         setLoading(true)
-        try { const { data } = await api.get('/settings/jam-kerja'); setList(data.data || []) }
+        try { const { data } = await api.get(`/settings/jam-kerja?sekolah_id=${sekolahId}`); setList(data.data || []) }
         catch {} finally { setLoading(false) }
     }
 
-    useEffect(() => { fetch() }, [])
+    useEffect(() => { fetch() }, [sekolahId])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
         setSubmitting(true)
         try {
-            await api.post('/settings/jam-kerja', form)
+            await api.post(`/settings/jam-kerja?sekolah_id=${sekolahId}`, form)
             setShowForm(false)
             setForm({ nama_shift: '', jam_masuk: '07:00', jam_pulang: '15:00', toleransi_menit: 15, is_default: false })
             fetch()
@@ -33,26 +32,21 @@ export default function JamKerjaPage() {
 
     const handleDelete = async (id) => {
         if (!confirm('Hapus shift ini?')) return
-        try { await api.delete(`/settings/jam-kerja/${id}`); fetch() } catch {}
+        try { await api.delete(`/settings/jam-kerja/${id}?sekolah_id=${sekolahId}`); fetch() } catch {}
     }
 
     return (
-        <div className="p-6 max-w-3xl mx-auto">
-            <PageHeader
-                title="Jam Kerja"
-                description="Konfigurasi shift kerja sekolah"
-                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                action={
-                    <button onClick={() => setShowForm(s => !s)}
-                        className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2">
-                        {showForm ? '✕ Batal' : '+ Tambah Shift'}
-                    </button>
-                }
-            />
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white font-semibold">Jam Kerja</h3>
+                <button onClick={() => setShowForm(s => !s)}
+                    className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+                    {showForm ? 'Batal' : '+ Tambah Shift'}
+                </button>
+            </div>
 
             {showForm && (
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
-                    <h3 className="text-white font-semibold mb-4">Shift Baru</h3>
+                <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-4">
                     {error && <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">⚠️ {error}</div>}
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -62,7 +56,7 @@ export default function JamKerjaPage() {
                                 className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
                         </div>
                         <div>
-                            <label className="block text-slate-400 text-xs uppercase tracking-wide mb-1.5">Toleransi Terlambat (menit)</label>
+                            <label className="block text-slate-400 text-xs uppercase tracking-wide mb-1.5">Toleransi (menit)</label>
                             <input type="number" min="0" max="60" value={form.toleransi_menit}
                                 onChange={e => setForm(f => ({ ...f, toleransi_menit: +e.target.value }))}
                                 className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
@@ -85,8 +79,8 @@ export default function JamKerjaPage() {
                         </div>
                         <div className="sm:col-span-2">
                             <button type="submit" disabled={submitting}
-                                className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors">
-                                {submitting ? '⏳ Menyimpan...' : '+ Simpan Shift'}
+                                className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors">
+                                {submitting ? 'Menyimpan...' : 'Simpan Shift'}
                             </button>
                         </div>
                     </form>
@@ -95,30 +89,25 @@ export default function JamKerjaPage() {
 
             <div className="space-y-3">
                 {loading ? (
-                    [...Array(2)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-slate-800 animate-pulse" />)
+                    <div className="h-20 rounded-xl bg-slate-800 animate-pulse" />
                 ) : list.length === 0 ? (
-                    <div className="text-center py-12 bg-slate-900 border border-slate-800 rounded-xl">
-                        <span className="text-4xl">⏰</span>
-                        <p className="text-slate-400 mt-3">Belum ada shift kerja. Tambahkan shift pertama.</p>
-                    </div>
+                    <p className="text-slate-400 text-sm text-center py-4">Belum ada shift kerja.</p>
                 ) : (
                     list.map(jam => (
-                        <div key={jam.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-xl flex-shrink-0">⏰</div>
+                        <div key={jam.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                    <p className="text-white font-medium">{jam.nama_shift}</p>
+                                    <p className="text-white text-sm font-medium">{jam.nama_shift}</p>
                                     {jam.is_default === 1 && (
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">Default</span>
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">Default</span>
                                     )}
                                 </div>
-                                <p className="text-slate-400 text-sm">
-                                    {jam.jam_masuk?.slice(0, 5)} – {jam.jam_pulang?.slice(0, 5)} ·
-                                    Toleransi {jam.toleransi_menit} menit
+                                <p className="text-slate-400 text-xs mt-1">
+                                    {jam.jam_masuk?.slice(0, 5)} — {jam.jam_pulang?.slice(0, 5)} · Toleransi {jam.toleransi_menit}m
                                 </p>
                             </div>
                             <button onClick={() => handleDelete(jam.id)}
-                                className="text-xs text-red-400 hover:text-red-300 border border-red-500/30 hover:bg-red-500/10 px-2 py-1 rounded-lg transition-colors">
+                                className="text-xs text-red-400 hover:bg-red-500/10 px-2 py-1 rounded transition-colors">
                                 Hapus
                             </button>
                         </div>

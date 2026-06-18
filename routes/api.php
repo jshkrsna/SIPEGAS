@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PresensiController;
 use App\Http\Controllers\Api\RekapController;
 use App\Http\Controllers\Api\SekolahController;
 use App\Http\Controllers\Api\SettingsController;
+use App\Http\Controllers\Api\YayasanController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -80,6 +81,24 @@ Route::middleware('auth:sanctum')->group(function () {
     // Sekolah
     Route::get('/sekolah', [SekolahController::class, 'index']);
 
+    // Yayasan (dropdown - public authenticated)
+    Route::get('/yayasan', [YayasanController::class, 'index']);
+
+    // Hari Libur (Public for authenticated users)
+    Route::get('/settings/hari-libur', [SettingsController::class, 'indexHariLibur']);
+
+    // Yayasan CRUD (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::post('/yayasan', [YayasanController::class, 'store']);
+        Route::put('/yayasan/{id}', [YayasanController::class, 'update']);
+        Route::delete('/yayasan/{id}', [YayasanController::class, 'destroy']);
+
+        Route::get('/sekolah/by-yayasan', [SekolahController::class, 'byYayasan']);
+        Route::post('/sekolah', [SekolahController::class, 'store']);
+        Route::put('/sekolah/{id}', [SekolahController::class, 'update']);
+        Route::delete('/sekolah/{id}', [SekolahController::class, 'destroy']);
+    });
+
 
     // ─── Admin / Kepala Sekolah Only ─────────────────────────────────────────
 
@@ -101,7 +120,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/jam-kerja/{id}', [SettingsController::class, 'destroyJamKerja']);
 
         // Hari Libur
-        Route::get('/hari-libur', [SettingsController::class, 'indexHariLibur']);
         Route::post('/hari-libur', [SettingsController::class, 'storeHariLibur']);
         Route::delete('/hari-libur/{id}', [SettingsController::class, 'destroyHariLibur']);
 

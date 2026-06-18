@@ -15,10 +15,10 @@ import ApprovalJarakJauh from './pages/admin/ApprovalJarakJauh'
 import ManajemenPengguna from './pages/admin/ManajemenPengguna'
 import LaporanBulanan from './pages/laporan/LaporanBulanan'
 import LaporanYayasan from './pages/laporan/LaporanYayasan'
-import JamKerjaPage from './pages/settings/JamKerjaPage'
 import HariLiburPage from './pages/settings/HariLiburPage'
-import GpsPage from './pages/settings/GpsPage'
 import GenerateQR from './pages/admin/GenerateQR'
+import ManajemenSekolah from './pages/admin/ManajemenSekolah'
+import ManajemenYayasan from './pages/admin/ManajemenYayasan'
 import ProfilPage from './pages/ProfilPage'
 
 function PrivateRoute({ children, roles }) {
@@ -85,24 +85,24 @@ export default function App() {
                         <ManajemenPengguna />
                     </PrivateRoute>
                 } />
+                <Route path="/sekolah" element={
+                    <PrivateRoute roles={['admin']}>
+                        <ManajemenSekolah />
+                    </PrivateRoute>
+                } />
+                <Route path="/yayasan" element={
+                    <PrivateRoute roles={['admin']}>
+                        <ManajemenYayasan />
+                    </PrivateRoute>
+                } />
                 <Route path="/qr-generator" element={
                     <PrivateRoute roles={['admin', 'kepala_sekolah']}>
                         <GenerateQR />
                     </PrivateRoute>
                 } />
-                <Route path="/settings/jam-kerja" element={
-                    <PrivateRoute roles={['admin']}>
-                        <JamKerjaPage />
-                    </PrivateRoute>
-                } />
                 <Route path="/settings/hari-libur" element={
                     <PrivateRoute roles={['admin']}>
                         <HariLiburPage />
-                    </PrivateRoute>
-                } />
-                <Route path="/settings/gps" element={
-                    <PrivateRoute roles={['admin']}>
-                        <GpsPage />
                     </PrivateRoute>
                 } />
             </Route>

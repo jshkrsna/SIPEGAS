@@ -17,12 +17,20 @@ export default function KalenderPresensi() {
     const [year, setYear] = useState(dayjs().year())
     const [loading, setLoading] = useState(true)
 
+    const [libur, setLibur] = useState([])
+
     useEffect(() => {
         setLoading(true)
-        api.get('/presensi', { params: { bulan: month + 1, tahun: year, per_page: 100 } })
-            .then(r => setData(r.data.data?.data || []))
-            .catch(() => {})
-            .finally(() => setLoading(false))
+        Promise.all([
+            api.get('/presensi', { params: { bulan: month + 1, tahun: year, per_page: 100 } }),
+            api.get('/settings/hari-libur', { params: { tahun: year } })
+        ])
+        .then(([rPresensi, rLibur]) => {
+            setData(rPresensi.data.data?.data || [])
+            setLibur(rLibur.data.data || [])
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false))
     }, [month, year])
 
     const startOfMonth = dayjs().year(year).month(month).startOf('month')
@@ -31,6 +39,14 @@ export default function KalenderPresensi() {
 
     const presensiMap = data.reduce((acc, p) => {
         acc[dayjs(p.tanggal).date()] = p
+        return acc
+    }, {})
+
+    const liburMap = libur.reduce((acc, l) => {
+        const lDate = dayjs(l.tanggal)
+        if (lDate.month() === month) {
+            acc[lDate.date()] = l
+        }
         return acc
     }, {})
 
@@ -78,19 +94,23 @@ export default function KalenderPresensi() {
                             const presensi = presensiMap[day]
                             const isToday = dayjs().date() === day && dayjs().month() === month && dayjs().year() === year
                             const isWeekend = dayjs().year(year).month(month).date(day).day() % 6 === 0
+                            const hariLibur = liburMap[day]
 
                             return (
                                 <div key={day}
                                     className={`relative aspect-square rounded-lg flex flex-col items-center justify-center p-1 text-xs transition-all
                                         ${isToday ? 'ring-2 ring-blue-500' : ''}
-                                        ${presensi ? 'cursor-pointer hover:opacity-80' : isWeekend ? 'bg-slate-800/30' : 'bg-slate-800/50'}
+                                        ${presensi ? 'cursor-pointer hover:opacity-80' : (hariLibur || isWeekend) ? 'bg-red-500/10' : 'bg-slate-800/50'}
                                     `}
                                     style={presensi ? { backgroundColor: STATUS_COLOR[presensi.status_kehadiran] + '33' } : {}}
-                                    title={presensi ? `${presensi.status_kehadiran}${presensi.waktu_checkin ? ` · Masuk ${dayjs(presensi.waktu_checkin).format('HH:mm')}` : ''}` : ''}
+                                    title={presensi ? `${presensi.status_kehadiran}${presensi.waktu_checkin ? ` · Masuk ${dayjs(presensi.waktu_checkin).format('HH:mm')}` : ''}` : hariLibur ? hariLibur.nama_libur : ''}
                                 >
-                                    <span className={`font-medium ${isToday ? 'text-blue-400' : isWeekend ? 'text-slate-500' : 'text-slate-300'}`}>{day}</span>
+                                    <span className={`font-medium ${isToday ? 'text-blue-400' : hariLibur ? 'text-red-400' : isWeekend ? 'text-red-400/70' : 'text-slate-300'}`}>{day}</span>
                                     {presensi && (
                                         <div className="w-2 h-2 rounded-full mt-0.5" style={{ backgroundColor: STATUS_COLOR[presensi.status_kehadiran] }} />
+                                    )}
+                                    {!presensi && hariLibur && (
+                                        <div className="w-1.5 h-1.5 rounded-full mt-0.5 bg-red-500" title={hariLibur.nama_libur} />
                                     )}
                                 </div>
                             )

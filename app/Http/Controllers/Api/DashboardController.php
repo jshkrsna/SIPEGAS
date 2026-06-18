@@ -69,7 +69,7 @@ class DashboardController extends Controller
         $month = Carbon::now()->month;
         $year  = Carbon::now()->year;
 
-        $totalPegawai = Pengguna::where('sekolah_id', $sekolahId)->where('is_active', 1)->count();
+        $totalPegawai = Pengguna::where('sekolah_id', $sekolahId)->where('is_active', 1)->where('role', 'pegawai')->count();
 
         $todayStats = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
             ->whereDate('tanggal', $today)
@@ -148,7 +148,7 @@ class DashboardController extends Controller
         $sekolahList = \App\Models\Sekolah::where('is_active', 1)->get(['id', 'nama_sekolah', 'kode_sekolah']);
 
         $totalSekolah = $sekolahList->count();
-        $totalPegawai = Pengguna::where('is_active', 1)->whereNotNull('sekolah_id')->count();
+        $totalPegawai = Pengguna::where('is_active', 1)->whereNotNull('sekolah_id')->where('role', 'pegawai')->count();
 
         $todayHadir = Presensi::whereDate('tanggal', $today)
             ->whereIn('status_kehadiran', ['hadir', 'terlambat'])->count();
@@ -166,7 +166,7 @@ class DashboardController extends Controller
         // Per-school comparative stats (leaderboard)
         $perSekolah = $sekolahList->map(function ($sekolah) use ($month, $year, $today) {
             $pegawaiIds = Pengguna::where('sekolah_id', $sekolah->id)
-                ->where('is_active', 1)->pluck('id');
+                ->where('is_active', 1)->where('role', 'pegawai')->pluck('id');
             $totalPegawai = $pegawaiIds->count();
 
             // This month stats
