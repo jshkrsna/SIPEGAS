@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
+import ReactDOM from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -47,7 +48,7 @@ const APPROVAL_STYLES = {
 }
 
 // ─── Location Modal ───────────────────────────────────────────────────────────
-function LocationModal({ presensi, onClose }) {
+function LocationModal({ presensi, onClose, onImageClick }) {
     const modalRef = useRef(null)
     const lat = parseFloat(presensi.lat_checkin)
     const lng = parseFloat(presensi.lng_checkin)
@@ -68,8 +69,8 @@ function LocationModal({ presensi, onClose }) {
 
     const hasLocation = !isNaN(lat) && !isNaN(lng) && lat !== 0
 
-    return (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={handleClose}>
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={handleClose}>
             <div ref={modalRef} className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
@@ -120,12 +121,18 @@ function LocationModal({ presensi, onClose }) {
                     {presensi.selfie_url && (
                         <div className="col-span-2">
                             <p className="text-slate-500 text-xs mb-1.5">Foto Selfie</p>
-                            <img src={presensi.selfie_url} alt="Selfie" className="w-16 h-16 rounded-lg object-cover border border-slate-700" />
+                            <img 
+                                src={presensi.selfie_url} 
+                                alt="Selfie" 
+                                className="w-16 h-16 rounded-lg object-cover border border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" 
+                                onClick={() => onImageClick(presensi.selfie_url)}
+                            />
                         </div>
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 
@@ -138,6 +145,7 @@ export default function RiwayatPresensi() {
     const [data, setData]           = useState(null)
     const [loading, setLoading]     = useState(true)
     const [selectedPresensi, setSelectedPresensi] = useState(null)
+    const [lightboxImage, setLightboxImage] = useState(null)
     const [filters, setFilters]     = useState({
         bulan: dayjs().month() + 1,
         tahun: dayjs().year(),
@@ -279,9 +287,17 @@ export default function RiwayatPresensi() {
                                             <td className="px-4 py-3">
                                                 {(() => {
                                                     const statusApp = p.status_approval_remote || (p.is_luar_radius ? 'pending' : 'approved');
+                                                    
+                                                    const translateStatus = (s) => {
+                                                        if (s === 'approved') return 'DISETUJUI';
+                                                        if (s === 'rejected') return 'DITOLAK';
+                                                        if (s === 'pending') return 'MENUNGGU';
+                                                        return s;
+                                                    }
+
                                                     return (
                                                         <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-semibold ${APPROVAL_STYLES[statusApp] || 'bg-slate-700 text-slate-400'}`}>
-                                                            {statusApp}
+                                                            {translateStatus(statusApp)}
                                                         </span>
                                                     )
                                                 })()}
@@ -338,7 +354,18 @@ export default function RiwayatPresensi() {
 
             {/* Location Modal */}
             {selectedPresensi && (
-                <LocationModal presensi={selectedPresensi} onClose={() => setSelectedPresensi(null)} />
+                <LocationModal presensi={selectedPresensi} onClose={() => setSelectedPresensi(null)} onImageClick={setLightboxImage} />
+            )}
+
+            {/* Lightbox for Image */}
+            {lightboxImage && ReactDOM.createPortal(
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md cursor-zoom-out overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) setLightboxImage(null) }}>
+                    <button onClick={() => setLightboxImage(null)} className="fixed top-4 right-4 w-10 h-10 bg-slate-800/80 hover:bg-slate-700 text-white rounded-full flex items-center justify-center shadow-lg transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                    <img src={lightboxImage} alt="Enlarged" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" />
+                </div>,
+                document.body
             )}
         </div>
     )

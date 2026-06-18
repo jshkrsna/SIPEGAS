@@ -137,8 +137,8 @@ export default function PengajuanIzin() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
                                     <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Status</p>
-                                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium capitalize w-fit ${STATUS_STYLES[modalItem.status_approval]}`}>
-                                        {modalItem.status_approval}
+                                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium uppercase w-fit ${STATUS_STYLES[modalItem.status_approval]}`}>
+                                        {modalItem.status_approval === 'approved' ? 'DISETUJUI' : modalItem.status_approval === 'rejected' ? 'DITOLAK' : 'MENUNGGU'}
                                     </span>
                                 </div>
                                 <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
@@ -338,8 +338,8 @@ export default function PengajuanIzin() {
                             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${STATUS_STYLES[item.status_approval]}`}>
-                                            {item.status_approval}
+                                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium uppercase ${STATUS_STYLES[item.status_approval]}`}>
+                                            {item.status_approval === 'approved' ? 'DISETUJUI' : item.status_approval === 'rejected' ? 'DITOLAK' : 'MENUNGGU'}
                                         </span>
                                         <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 capitalize font-medium">{item.jenis}</span>
                                         <span className="text-slate-500 text-xs">

@@ -121,6 +121,7 @@ class IzinCutiController extends Controller
                         'jam_kerja_id'      => \App\Models\JamKerja::where('sekolah_id', $request->user()->sekolah_id)->value('id'),
                         'status_kehadiran'  => in_array($izin->jenis, ['cuti']) ? 'cuti' : 'izin',
                         'selfie_checkin_url' => 'system://izin-auto',
+                        'metode_checkin'    => 'manual',
                         'keterangan'        => "Auto-approved: {$izin->jenis} - {$izin->alasan}",
                     ]
                 );

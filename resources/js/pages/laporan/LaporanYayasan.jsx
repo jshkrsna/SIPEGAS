@@ -34,7 +34,7 @@ export default function LaporanYayasan() {
             }, containerRef)
             return () => ctx.revert()
         }
-    }, [loading, sekolah])
+    }, [loading])
 
     return (
         <div ref={containerRef} className="p-6 max-w-5xl mx-auto space-y-6">

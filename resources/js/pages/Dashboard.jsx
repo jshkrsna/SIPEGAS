@@ -74,7 +74,7 @@ function GuruDashboard({ data }) {
             )
         }, containerRef)
         return () => ctx.revert()
-    }, [data])
+    }, [])
 
     const b = data.bulan_ini
     const today = data.today_presensi
@@ -166,10 +166,19 @@ function AdminDashboard({ data }) {
             )
         }, containerRef)
         return () => ctx.revert()
-    }, [data])
+    }, [])
 
     const t    = data.today || {}
     const trend = data.weekly_trend || {}
+    const b    = data.bulan_ini || {}
+
+    const pieData = [
+        { name: 'Hadir',     value: b.hadir,     color: STATUS_COLORS.hadir },
+        { name: 'Terlambat', value: b.terlambat, color: STATUS_COLORS.terlambat },
+        { name: 'Izin',      value: b.izin,      color: STATUS_COLORS.izin },
+        { name: 'Cuti',      value: b.cuti,      color: STATUS_COLORS.cuti },
+        { name: 'Alpha',     value: b.alpha,     color: STATUS_COLORS.alpha },
+    ].filter(d => d.value > 0)
 
     const barData = Object.entries(trend).map(([date, statuses]) => {
         const row = { date: dayjs(date).format('DD/MM') }
@@ -179,20 +188,35 @@ function AdminDashboard({ data }) {
 
     return (
         <div ref={containerRef} className="space-y-6">
-            {/* Today Stats */}
+            {/* Monthly Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div className="dashboard-item h-full"><StatCard label="Total Pegawai" value={data.total_pegawai}   icon={<Icon name="pegawai" />} color="blue"   /></div>
-                <div className="dashboard-item h-full"><StatCard label="Hadir"          value={t.hadir}             icon={<Icon name="hadir" />} color="green"  /></div>
-                <div className="dashboard-item h-full"><StatCard label="Terlambat"      value={t.terlambat}         icon={<Icon name="terlambat" />} color="yellow" /></div>
-                <div className="dashboard-item h-full"><StatCard label="Izin"           value={t.izin}              icon={<Icon name="izin" />} color="blue"   /></div>
-                <div className="dashboard-item h-full"><StatCard label="Alpha"          value={t.alpha}             icon={<Icon name="alpha" />} color="red"    /></div>
-                <div className="dashboard-item h-full"><StatCard label="Pending Izin"   value={data.pending_izin}   icon={<Icon name="pending" />} color="violet" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Hadir Bulan Ini"    value={b.hadir}             icon={<Icon name="hadir" />} color="green"  /></div>
+                <div className="dashboard-item h-full"><StatCard label="Terlambat Bulan Ini" value={b.terlambat}         icon={<Icon name="terlambat" />} color="yellow" /></div>
+                <div className="dashboard-item h-full"><StatCard label="Izin Bulan Ini"     value={b.izin}              icon={<Icon name="izin" />} color="blue"   /></div>
+                <div className="dashboard-item h-full"><StatCard label="Alpha Bulan Ini"    value={b.alpha}             icon={<Icon name="alpha" />} color="red"    /></div>
+                <div className="dashboard-item h-full"><StatCard label="Pending Izin"       value={data.pending_izin}   icon={<Icon name="pending" />} color="violet" /></div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Weekly Trend */}
+            {/* Monthly Recap Pie Chart for Admin */}
+            {pieData.length > 0 && (
                 <div className="dashboard-item bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none">
-                    <h3 className="text-slate-800 dark:text-white font-semibold mb-4">Tren Kehadiran 7 Hari</h3>
+                    <h3 className="text-slate-800 dark:text-white font-semibold mb-4">Rekap Kehadiran Bulan Ini (Seluruh Pegawai)</h3>
+                    <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                            <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70}
+                                label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
+                                {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                            </Pie>
+                            <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="dashboard-item bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm dark:shadow-none">
+                    <h3 className="text-slate-800 dark:text-white font-semibold mb-6">Tren Kehadiran 7 Hari</h3>
                     <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={barData}>
                             <XAxis dataKey="date" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />

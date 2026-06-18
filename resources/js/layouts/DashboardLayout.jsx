@@ -196,7 +196,7 @@ export default function DashboardLayout() {
     }
 
     return (
-        <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
+        <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
             {/* Desktop Sidebar */}
             <div className="hidden md:flex md:flex-shrink-0">
                 <Sidebar 
@@ -232,7 +232,7 @@ export default function DashboardLayout() {
             )}
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{ isolation: 'isolate' }}>
                 {/* Mobile Topbar */}
                 <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
                     <button

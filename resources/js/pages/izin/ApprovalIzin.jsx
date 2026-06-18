@@ -1,251 +1,303 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react'
+import ReactDOM from 'react-dom'
 import api from '../../api/axios'
 import dayjs from 'dayjs'
 import { gsap } from 'gsap'
+import PageHeader from '../../components/PageHeader'
+import { usePageTransition } from '../../utils/usePageTransition'
 
 const STATUS_STYLES = {
-    pending: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-    approved: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-    rejected: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    pending:  'bg-amber-500/10 text-amber-400 border border-amber-500/30',
+    approved: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
+    rejected: 'bg-red-500/10 text-red-400 border border-red-500/30',
 }
 
-export default function ApprovalIzin() {
-    const [list, setList] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [filter, setFilter] = useState('pending')
-    const [processing, setProcessing] = useState(false)
-    const [modalItem, setModalItem] = useState(null)
-    const [catatan, setCatatan] = useState('')
-    const [lightboxImage, setLightboxImage] = useState(null)
+const JENIS_ICON = {
+    izin: '📝',
+    cuti: '🏖️',
+    sakit: '🏥',
+}
 
-    const containerRef = useRef(null)
+const TABS = [
+    { key: 'pending',  label: 'Menunggu',  dot: 'bg-amber-400' },
+    { key: 'approved', label: 'Disetujui', dot: 'bg-emerald-400' },
+    { key: 'rejected', label: 'Ditolak',   dot: 'bg-red-400' },
+]
+
+// ─── Lightbox ─────────────────────────────────────────────────────────────────
+function Lightbox({ src, onClose }) {
+    const ref = useRef(null)
+    useLayoutEffect(() => {
+        if (ref.current) gsap.fromTo(ref.current, { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.22, ease: 'power2.out' })
+    }, [])
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm" onClick={onClose}>
+            <button onClick={onClose} className="fixed top-4 right-4 w-9 h-9 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <img ref={ref} src={src} alt="Preview" className="max-w-full max-h-[88vh] object-contain rounded-xl shadow-2xl cursor-default" onClick={e => e.stopPropagation()} />
+        </div>,
+        document.body
+    )
+}
+
+// ─── Detail Modal ──────────────────────────────────────────────────────────────
+function DetailModal({ item, onClose, onApprove, processing, lightboxSrc, setLightboxSrc }) {
+    const overlayRef = useRef(null)
+    const cardRef = useRef(null)
+    const [catatan, setCatatan] = useState('')
+
+    useLayoutEffect(() => {
+        gsap.fromTo(overlayRef.current, { opacity: 0 }, { opacity: 1, duration: 0.2 })
+        gsap.fromTo(cardRef.current, { y: 32, opacity: 0 }, { y: 0, opacity: 1, duration: 0.28, ease: 'power3.out' })
+    }, [])
+
+    const handleClose = () => {
+        gsap.to(cardRef.current, { y: 16, opacity: 0, duration: 0.18, ease: 'power2.in', onComplete: onClose })
+        gsap.to(overlayRef.current, { opacity: 0, duration: 0.18 })
+    }
+
+    const durasi = dayjs(item.tanggal_selesai).diff(item.tanggal_mulai, 'day') + 1
+
+    return ReactDOM.createPortal(
+        <div ref={overlayRef} className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4 bg-slate-950/80 backdrop-blur-sm" onClick={e => { if (e.target === e.currentTarget) handleClose() }}>
+            <div ref={cardRef} className="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-slate-700/60 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+                {/* Drag handle – mobile */}
+                <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+                    <div className="w-10 h-1 rounded-full bg-slate-700" />
+                </div>
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {item.pengguna?.nama_lengkap?.charAt(0)}
+                        </div>
+                        <div>
+                            <p className="text-white font-semibold text-sm leading-tight">{item.pengguna?.nama_lengkap}</p>
+                            <p className="text-slate-500 text-xs">{item.pengguna?.nip}</p>
+                        </div>
+                    </div>
+                    <button onClick={handleClose} className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors flex-shrink-0">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="overflow-y-auto flex-1 p-5 space-y-4">
+                    {/* Status + Jenis row */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide ${STATUS_STYLES[item.status_approval]}`}>
+                            {item.status_approval === 'approved' ? 'Disetujui' : item.status_approval === 'rejected' ? 'Ditolak' : 'Menunggu'}
+                        </span>
+                        <span className="text-[11px] px-2.5 py-1 rounded-full font-medium capitalize bg-slate-800 text-slate-300 border border-slate-700">
+                            {JENIS_ICON[item.jenis] || '📄'} {item.jenis}
+                        </span>
+                        <span className="text-[11px] px-2.5 py-1 rounded-full font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                            {durasi} hari
+                        </span>
+                    </div>
+
+                    {/* Tanggal */}
+                    <div>
+                        <p className="text-slate-500 text-[11px] uppercase tracking-wider mb-1">Tanggal</p>
+                        <p className="text-slate-200 text-sm font-medium">
+                            {dayjs(item.tanggal_mulai).format('DD MMM YYYY')}
+                            {durasi > 1 && <> &ndash; {dayjs(item.tanggal_selesai).format('DD MMM YYYY')}</>}
+                        </p>
+                    </div>
+
+                    {/* Alasan */}
+                    <div>
+                        <p className="text-slate-500 text-[11px] uppercase tracking-wider mb-1">Alasan</p>
+                        <p className="text-slate-200 text-sm leading-relaxed">{item.alasan}</p>
+                    </div>
+
+                    {/* Bukti */}
+                    {item.bukti_url && (
+                        <div>
+                            <p className="text-slate-500 text-[11px] uppercase tracking-wider mb-2">Lampiran</p>
+                            {item.bukti_url.match(/\.(jpeg|jpg|gif|png)/i) || item.bukti_url.startsWith('data:image') ? (
+                                <button onClick={() => setLightboxSrc(item.bukti_url)}
+                                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/20 px-3 py-2 rounded-lg transition-colors w-full justify-center">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    Lihat Gambar Bukti
+                                </button>
+                            ) : (
+                                <a href={item.bukti_url} target="_blank" rel="noreferrer"
+                                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/20 px-3 py-2 rounded-lg transition-colors w-full justify-center">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                    Buka Dokumen
+                                </a>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Catatan approver (sudah diproses) */}
+                    {item.status_approval !== 'pending' && item.catatan_approver && (
+                        <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50">
+                            <p className="text-slate-500 text-[11px] uppercase tracking-wider mb-1">Catatan</p>
+                            <p className="text-slate-300 text-sm italic">"{item.catatan_approver}"</p>
+                        </div>
+                    )}
+
+                    {/* Action area – pending only */}
+                    {item.status_approval === 'pending' && (
+                        <div className="border-t border-slate-800 pt-4 space-y-3">
+                            <textarea rows={2} value={catatan} onChange={e => setCatatan(e.target.value)}
+                                placeholder="Catatan untuk pemohon (opsional)..."
+                                className="w-full bg-slate-800/60 border border-slate-700 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 resize-none transition-colors" />
+                            <div className="grid grid-cols-2 gap-2">
+                                <button onClick={() => onApprove('rejected', catatan)} disabled={processing}
+                                    className="py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500/20 hover:bg-red-500 border border-red-500/30 hover:border-red-500 transition-all disabled:opacity-50">
+                                    {processing ? '⏳' : 'Tolak'}
+                                </button>
+                                <button onClick={() => onApprove('approved', catatan)} disabled={processing}
+                                    className="py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-500/20 hover:bg-emerald-500 border border-emerald-500/30 hover:border-emerald-500 transition-all disabled:opacity-50">
+                                    {processing ? '⏳' : 'Setujui'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>,
+        document.body
+    )
+}
+
+// ─── Item Card ─────────────────────────────────────────────────────────────────
+function ItemCard({ item, onSelect }) {
+    const durasi = dayjs(item.tanggal_selesai).diff(item.tanggal_mulai, 'day') + 1
+    return (
+        <button onClick={() => onSelect(item)}
+            className="w-full text-left bg-slate-900 hover:bg-slate-800/60 border border-slate-800 hover:border-slate-700 rounded-xl p-4 transition-all group">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {item.pengguna?.nama_lengkap?.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <p className="text-slate-200 font-medium text-sm truncate">{item.pengguna?.nama_lengkap}</p>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase shrink-0 ${STATUS_STYLES[item.status_approval]}`}>
+                            {item.status_approval === 'approved' ? 'Disetujui' : item.status_approval === 'rejected' ? 'Ditolak' : 'Menunggu'}
+                        </span>
+                    </div>
+                    <p className="text-slate-500 text-xs">
+                        {item.pengguna?.nip && <span className="mr-1.5">{item.pengguna.nip}</span>}
+                        <span className="capitalize">{JENIS_ICON[item.jenis] || '📄'} {item.jenis}</span>
+                        <span className="mx-1.5">·</span>
+                        {dayjs(item.tanggal_mulai).format('DD MMM YYYY')}
+                        {durasi > 1 && <> – {dayjs(item.tanggal_selesai).format('DD MMM YYYY')}</>}
+                        <span className="ml-1 text-slate-600">({durasi}h)</span>
+                    </p>
+                </div>
+                <svg className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+        </button>
+    )
+}
+
+// ─── Main ──────────────────────────────────────────────────────────────────────
+export default function ApprovalIzin() {
+    const [list, setList]         = useState([])
+    const [loading, setLoading]   = useState(true)
+    const [filter, setFilter]     = useState('pending')
+    const [processing, setProcessing] = useState(false)
+    const [modalItem, setModalItem]   = useState(null)
+    const [lightboxSrc, setLightboxSrc] = useState(null)
+    const pageRef = usePageTransition()
 
     const fetchList = async () => {
         setLoading(true)
         try {
             const { data } = await api.get('/izin-cuti', { params: { status: filter } })
             setList(data.data?.data || [])
-        } catch { }
+        } catch {}
         finally { setLoading(false) }
     }
 
-    useEffect(() => {
-        fetchList()
-    }, [filter])
+    useEffect(() => { fetchList() }, [filter])
 
-    useLayoutEffect(() => {
-        if (containerRef.current) {
-            gsap.fromTo(containerRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' })
-        }
-    }, [])
-
-    const handleApproval = async (action) => {
+    const handleApproval = async (action, catatan) => {
         if (!modalItem) return
         setProcessing(true)
         try {
-            await api.patch(`/izin-cuti/${modalItem.id}/approve`, {
-                action: action,
-                catatan_approver: catatan,
-            })
+            await api.patch(`/izin-cuti/${modalItem.id}/approve`, { action, catatan_approver: catatan })
             setModalItem(null)
-            setCatatan('')
             fetchList()
         } catch (err) {
             alert(err.response?.data?.message || 'Gagal memproses.')
-        } finally {
-            setProcessing(false)
-        }
+        } finally { setProcessing(false) }
     }
 
-    // Lightbox Component
-    const Lightbox = () => {
-        const ref = useRef(null)
-        useLayoutEffect(() => {
-            if (ref.current && lightboxImage) {
-                gsap.fromTo(ref.current, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.25, ease: 'power2.out' })
-            }
-        }, [lightboxImage])
-
-        if (!lightboxImage) return null
-        return (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md cursor-zoom-out overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) setLightboxImage(null) }}>
-                <img ref={ref} src={lightboxImage} alt="Preview" className="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()} />
-                <button onClick={() => setLightboxImage(null)} className="fixed top-4 right-4 w-10 h-10 bg-slate-800/80 hover:bg-slate-700 text-white rounded-full flex items-center justify-center shadow-lg transition-colors">
-                    ✕
-                </button>
-            </div>
-        )
-    }
-
-    // Modal Component
-    const Modal = () => {
-        const ref = useRef(null)
-        useLayoutEffect(() => {
-            if (ref.current && modalItem) {
-                gsap.fromTo(ref.current, { opacity: 0, y: 30, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power2.out' })
-            }
-        }, [modalItem])
-
-        if (!modalItem) return null
-
-        return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setModalItem(null) }}>
-                <div ref={ref} className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-full overflow-hidden">
-                    <div className="p-5 sm:p-6 border-b border-slate-800 bg-slate-800/30 flex justify-between items-center flex-shrink-0">
-                        <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                            <span>📄 Detail Pengajuan</span>
-                        </h3>
-                        <button onClick={() => setModalItem(null)} className="text-slate-400 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700">✕</button>
-                    </div>
-
-                    <div className="p-5 sm:p-6 overflow-y-auto flex-1">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold flex-shrink-0 text-xl shadow-inner">
-                                {modalItem.pengguna?.nama_lengkap?.charAt(0)}
-                            </div>
-                            <div>
-                                <p className="text-white font-semibold text-lg">{modalItem.pengguna?.nama_lengkap}</p>
-                                <p className="text-slate-400 text-sm">{modalItem.pengguna?.nip}</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 mb-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                                    <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Jenis</p>
-                                    <p className="text-slate-200 font-medium capitalize">{modalItem.jenis}</p>
-                                </div>
-                                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                                    <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Durasi</p>
-                                    <p className="text-slate-200 font-medium">{dayjs(modalItem.tanggal_selesai).diff(modalItem.tanggal_mulai, 'day') + 1} hari</p>
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                                <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Tanggal</p>
-                                <p className="text-slate-200 font-medium">{dayjs(modalItem.tanggal_mulai).format('DD MMM YYYY')} — {dayjs(modalItem.tanggal_selesai).format('DD MMM YYYY')}</p>
-                            </div>
-
-                            <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                                <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Alasan</p>
-                                <p className="text-slate-200 text-sm leading-relaxed">{modalItem.alasan}</p>
-                            </div>
-
-                            {modalItem.bukti_url && (
-                                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                                    <p className="text-slate-400 text-xs uppercase tracking-wider mb-2">Bukti Lampiran</p>
-                                    {modalItem.bukti_url.match(/\.(jpeg|jpg|gif|png)$/i) || modalItem.bukti_url.startsWith('data:image') ? (
-                                        <button onClick={() => setLightboxImage(modalItem.bukti_url)} className="text-blue-400 text-sm hover:text-blue-300 flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-2 rounded-lg transition-colors w-full justify-center">
-                                            <span>🖼️</span> Lihat Gambar Bukti
-                                        </button>
-                                    ) : (
-                                        <a href={modalItem.bukti_url} target="_blank" rel="noreferrer" className="text-blue-400 text-sm hover:text-blue-300 flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-2 rounded-lg transition-colors w-full justify-center">
-                                            <span>🔗</span> Buka Lampiran Dokumen
-                                        </a>
-                                    )}
-                                </div>
-                            )}
-
-                            {modalItem.status_approval !== 'pending' && modalItem.catatan_approver && (
-                                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                                    <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Catatan Anda</p>
-                                    <p className="text-slate-300 text-sm italic">"{modalItem.catatan_approver}"</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {modalItem.status_approval === 'pending' && (
-                            <div className="border-t border-slate-800 pt-5">
-                                <p className="text-slate-400 text-sm mb-3">Tambahkan catatan (opsional) untuk pemohon:</p>
-                                <textarea rows={2} value={catatan} onChange={e => setCatatan(e.target.value)}
-                                    placeholder="Tuliskan pesan persetujuan / penolakan..."
-                                    className="w-full bg-slate-800/50 border border-slate-700 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 resize-none mb-5 transition-colors" />
-
-                                <div className="flex gap-3">
-                                    <button onClick={() => handleApproval('approved')} disabled={processing}
-                                        className="flex-1 py-3 rounded-xl text-white font-semibold text-sm transition-colors shadow-lg bg-[#10b981] hover:bg-[#059669] shadow-emerald-600/20 disabled:opacity-50">
-                                        {processing ? '⏳' : '✅ Setujui'}
-                                    </button>
-                                    <button onClick={() => handleApproval('rejected')} disabled={processing}
-                                        className="flex-1 py-3 rounded-xl text-white font-semibold text-sm transition-colors shadow-lg bg-[#ef4444] hover:bg-[#dc2626] shadow-red-600/20 disabled:opacity-50">
-                                        {processing ? '⏳' : '❌ Tolak'}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        )
-    }
+    const pendingCount = filter === 'pending' ? list.length : null
 
     return (
-        <div className="p-4 sm:p-6 max-w-4xl mx-auto" ref={containerRef}>
-            {/* Header */}
-            <div className="mb-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-400 text-xl sm:text-2xl">📋</span>
-                    </div>
-                    <div>
-                        <h2 className="text-xl sm:text-2xl font-bold text-white">Approval Izin & Cuti</h2>
-                        <p className="text-slate-400 text-sm mt-0.5">Review dan kelola pengajuan ketidakhadiran pegawai</p>
-                    </div>
-                </div>
-            </div>
+        <div ref={pageRef} className="p-4 sm:p-6 max-w-4xl mx-auto space-y-5">
+            <PageHeader 
+                title="Approval Izin & Cuti" 
+                description="Review dan kelola pengajuan ketidakhadiran pegawai" 
+                icon={<svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            />
 
             {/* Filter tabs */}
-            <div className="flex gap-2 mb-6">
-                {['pending', 'approved', 'rejected'].map(s => (
-                    <button key={s} onClick={() => setFilter(s)}
-                        className={`px-5 py-2.5 rounded-xl text-sm font-medium capitalize transition-all ${filter === s ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                            }`}>
-                        {s}
+            <div className="flex gap-2 mb-5">
+                {TABS.map(t => (
+                    <button key={t.key} onClick={() => setFilter(t.key)}
+                        className={`px-4 py-2.5 rounded-xl text-sm font-medium capitalize transition-all flex items-center gap-2 ${
+                            filter === t.key 
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                        }`}>
+                        {t.label}
+                        {t.key === 'pending' && pendingCount > 0 && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${filter === t.key ? 'bg-white/20 text-white' : 'bg-amber-500/20 text-amber-500'}`}>
+                                {pendingCount}
+                            </span>
+                        )}
                     </button>
                 ))}
             </div>
 
-            {/* List */}
-            <div className="space-y-4">
-                {loading ? (
-                    [...Array(3)].map((_, i) => <div key={i} className="h-28 rounded-2xl bg-slate-800/50 animate-pulse border border-slate-700/30" />)
-                ) : list.length === 0 ? (
-                    <div className="text-center py-16 bg-slate-900 border border-slate-800 rounded-2xl">
-                        <span className="text-5xl block mb-4 opacity-50">📭</span>
-                        <p className="text-slate-400">Tidak ada pengajuan {filter}</p>
-                    </div>
-                ) : (
-                    list.map(item => (
-                        <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition-colors group flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white font-bold flex-shrink-0 text-lg shadow-inner">
-                                    {item.pengguna?.nama_lengkap?.charAt(0)}
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                        <p className="text-white font-semibold">{item.pengguna?.nama_lengkap}</p>
-                                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium capitalize ${STATUS_STYLES[item.status_approval]}`}>
-                                            {item.status_approval}
-                                        </span>
-                                    </div>
-                                    <p className="text-slate-400 text-sm">
-                                        {item.pengguna?.nip} <span className="mx-1.5 opacity-50">•</span> {dayjs(item.tanggal_mulai).format('DD MMM YYYY')} ({item.jenis})
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex sm:flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
-                                <button onClick={() => { setModalItem(item); setCatatan('') }}
-                                    className="flex-1 sm:w-full px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-colors border border-slate-700/50 hover:border-slate-600 text-center">
-                                    Lihat Detail
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
+            {/* Content */}
+            {loading ? (
+                <div className="space-y-3">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-[72px] rounded-xl bg-slate-900 border border-slate-800 animate-pulse" />
+                    ))}
+                </div>
+            ) : list.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-600">
+                    <svg className="w-12 h-12 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <p className="text-sm">Tidak ada pengajuan {TABS.find(t => t.key === filter)?.label.toLowerCase()}</p>
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    {list.map(item => (
+                        <ItemCard key={item.id} item={item} onSelect={setModalItem} />
+                    ))}
+                </div>
+            )}
 
-            <Modal />
-            <Lightbox />
+            {/* Modal */}
+            {modalItem && (
+                <DetailModal
+                    item={modalItem}
+                    onClose={() => setModalItem(null)}
+                    onApprove={handleApproval}
+                    processing={processing}
+                    lightboxSrc={lightboxSrc}
+                    setLightboxSrc={setLightboxSrc}
+                />
+            )}
+
+            {/* Lightbox */}
+            {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
         </div>
     )
 }

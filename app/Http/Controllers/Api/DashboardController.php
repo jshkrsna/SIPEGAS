@@ -66,6 +66,8 @@ class DashboardController extends Controller
     private function adminStats(Pengguna $user, string $today): JsonResponse
     {
         $sekolahId = $user->sekolah_id;
+        $month = Carbon::now()->month;
+        $year  = Carbon::now()->year;
 
         $totalPegawai = Pengguna::where('sekolah_id', $sekolahId)->where('is_active', 1)->count();
 
@@ -75,12 +77,13 @@ class DashboardController extends Controller
             ->groupBy('status_kehadiran')
             ->pluck('total', 'status_kehadiran');
 
-        $hadir     = $todayStats->get('hadir', 0) + $todayStats->get('terlambat', 0);
+        $hadirCount = $todayStats->get('hadir', 0);
+        $terlambatCount = $todayStats->get('terlambat', 0);
         $izinCount = $todayStats->get('izin', 0);
         $cutiCount = $todayStats->get('cuti', 0);
         $alphaCount = $todayStats->get('alpha', 0);
 
-        $belumHadir = $totalPegawai - $hadir - $izinCount - $cutiCount - $alphaCount;
+        $belumHadir = $totalPegawai - $hadirCount - $terlambatCount - $izinCount - $cutiCount - $alphaCount;
 
         $pendingIzin = IzinCuti::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
             ->where('status_approval', 'pending')->count();
@@ -91,7 +94,6 @@ class DashboardController extends Controller
             ->orderByDesc('waktu_checkin')
             ->limit(10)->get();
 
-        // Weekly trend (last 7 days)
         $weeklyTrend = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
             ->whereBetween('tanggal', [Carbon::now()->subDays(6)->toDateString(), $today])
             ->select('tanggal', 'status_kehadiran', DB::raw('count(*) as total'))
@@ -99,6 +101,12 @@ class DashboardController extends Controller
             ->orderBy('tanggal')
             ->get()
             ->groupBy('tanggal');
+            
+        $monthStats = Presensi::whereHas('pengguna', fn ($q) => $q->where('sekolah_id', $sekolahId))
+            ->whereMonth('tanggal', $month)->whereYear('tanggal', $year)
+            ->select('status_kehadiran', DB::raw('count(*) as total'))
+            ->groupBy('status_kehadiran')
+            ->pluck('total', 'status_kehadiran');
 
         return response()->json([
             'success' => true,
@@ -106,12 +114,19 @@ class DashboardController extends Controller
                 'role'           => 'admin',
                 'total_pegawai'  => $totalPegawai,
                 'today'          => [
-                    'hadir'      => $hadir,
-                    'terlambat'  => $todayStats->get('terlambat', 0),
+                    'hadir'      => $hadirCount,
+                    'terlambat'  => $terlambatCount,
                     'izin'       => $izinCount,
                     'cuti'       => $cutiCount,
                     'alpha'      => $alphaCount,
                     'belum_hadir' => max(0, $belumHadir),
+                ],
+                'bulan_ini'      => [
+                    'hadir'      => $monthStats->get('hadir', 0),
+                    'terlambat'  => $monthStats->get('terlambat', 0),
+                    'izin'       => $monthStats->get('izin', 0),
+                    'cuti'       => $monthStats->get('cuti', 0),
+                    'alpha'      => $monthStats->get('alpha', 0),
                 ],
                 'pending_izin'   => $pendingIzin,
                 'recent_checkins' => $recentCheckins,
@@ -161,11 +176,11 @@ class DashboardController extends Controller
                 ->groupBy('status_kehadiran')
                 ->pluck('total', 'status_kehadiran');
 
-            $hadir     = $monthStats->get('hadir', 0) + $monthStats->get('terlambat', 0);
+            $hadir     = $monthStats->get('hadir', 0);
             $terlambat = $monthStats->get('terlambat', 0);
             $alpha     = $monthStats->get('alpha', 0);
             $total     = $monthStats->sum();
-            $pctHadir  = $total > 0 ? round(($hadir / $total) * 100, 1) : 0;
+            $pctHadir  = $total > 0 ? round((($hadir + $terlambat) / $total) * 100, 1) : 0;
 
             // Today
             $todayHadir = Presensi::whereIn('pengguna_id', $pegawaiIds)
