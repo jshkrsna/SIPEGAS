@@ -12,7 +12,7 @@ class Sekolah extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'yayasan_id', 'nama_sekolah', 'kode_sekolah', 'alamat', 'no_telp', 'logo_url', 'is_active',
+        'yayasan_id', 'nama_sekolah', 'kode_sekolah', 'alamat', 'no_telp', 'logo_url', 'is_active', 'jumlah_hari_kerja',
     ];
 
     protected static function boot()

@@ -128,117 +128,6 @@ function UserFormModal({ editUser, jabatan, sekolahId, isYayasanMode, onClose, o
     )
 }
 
-// ─── Yayasan Users View ───────────────────────────────────────────────────────
-function YayasanUsersView({ onBack }) {
-    const [users, setUsers] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [showForm, setShowForm] = useState(false)
-    const [editData, setEditData] = useState(null)
-    const [search, setSearch] = useState('')
-
-    const fetchUsers = async () => {
-        setLoading(true)
-        try {
-            const { data } = await api.get(`/pengguna?role=yayasan`)
-            setUsers(data.data.data || [])
-        } catch {}
-        finally { setLoading(false) }
-    }
-
-    useEffect(() => { fetchUsers() }, [])
-
-    const handleDelete = async (id) => {
-        if (!confirm('Hapus pengguna yayasan ini?')) return
-        try {
-            await api.delete(`/pengguna/${id}`)
-            fetchUsers()
-        } catch {}
-    }
-
-    const filtered = users.filter(u => 
-        !search || u.nama_lengkap.toLowerCase().includes(search.toLowerCase()) || u.nip.includes(search)
-    )
-
-    return (
-        <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-4 mb-6">
-                <button onClick={onBack} className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 flex items-center justify-center text-slate-400 transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
-                </button>
-                <div className="flex-1">
-                    <h2 className="text-xl font-bold text-white">Pengguna Yayasan</h2>
-                    <p className="text-slate-400 text-sm">Kelola pengguna dengan akses level yayasan</p>
-                </div>
-                <button onClick={() => { setEditData(null); setShowForm(true) }}
-                    className="bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors shadow-lg shadow-amber-500/20">
-                    + User Yayasan
-                </button>
-            </div>
-
-            <div className="mb-4">
-                <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                    placeholder="🔍 Cari nama atau NIP..."
-                    className="w-full sm:max-w-md bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-amber-500" />
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-800/50 border-b border-slate-700/50">
-                                <th className="p-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Nama & NIP</th>
-                                <th className="p-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</th>
-                                <th className="p-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                                <th className="p-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800/50">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="4" className="p-8 text-center text-slate-400">Memuat data...</td>
-                                </tr>
-                            ) : filtered.length === 0 ? (
-                                <tr>
-                                    <td colSpan="4" className="p-8 text-center text-slate-500">Tidak ada pengguna yayasan.</td>
-                                </tr>
-                            ) : (
-                                filtered.map(u => (
-                                    <tr key={u.id} className="hover:bg-slate-800/20 transition-colors">
-                                        <td className="p-4">
-                                            <p className="text-white font-medium text-sm">{u.nama_lengkap}</p>
-                                            <p className="text-slate-500 text-xs font-mono mt-0.5">{u.nip}</p>
-                                        </td>
-                                        <td className="p-4 text-sm text-slate-300">{u.email}</td>
-                                        <td className="p-4">
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${u.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700/50 text-slate-400 border border-slate-700'}`}>
-                                                {u.is_active ? 'Aktif' : 'Nonaktif'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-right">
-                                            <button onClick={() => { setEditData(u); setShowForm(true) }} className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 mr-2">Edit</button>
-                                            <button onClick={() => handleDelete(u.id)} className="text-red-400 hover:text-red-300 text-xs px-2 py-1">Hapus</button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {showForm && (
-                <UserFormModal
-                    editUser={editData}
-                    jabatan={[]} // no jabatan for yayasan
-                    sekolahId={null}
-                    isYayasanMode={true}
-                    onClose={() => { setShowForm(false); setEditData(null) }}
-                    onSaved={() => { setShowForm(false); fetchUsers() }}
-                />
-            )}
-        </div>
-    )
-}
 
 // ─── Users Of School View ─────────────────────────────────────────────────────
 function UsersOfSchoolView({ sekolah, onBack }) {
@@ -398,7 +287,7 @@ function UsersOfSchoolView({ sekolah, onBack }) {
 }
 
 // ─── School List View ─────────────────────────────────────────────────────────
-function SekolahListView({ onSelect, onSelectYayasan }) {
+function SekolahListView({ onSelect }) {
     const [schools, setSchools] = useState([])
     const [loading, setLoading] = useState(true)
 
@@ -416,12 +305,8 @@ function SekolahListView({ onSelect, onSelectYayasan }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4">
                 <p className="text-slate-400 text-sm">Pilih sekolah untuk mengelola pengguna</p>
-                <button onClick={onSelectYayasan} className="text-sm text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:bg-amber-500/10 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/></svg>
-                    Kelola User Yayasan
-                </button>
             </div>
 
             {loading ? (
@@ -459,11 +344,10 @@ function SekolahListView({ onSelect, onSelectYayasan }) {
 export default function ManajemenPengguna() {
     const pageRef = usePageTransition()
     const [selectedSchool, setSelectedSchool] = useState(null)
-    const [showYayasan, setShowYayasan] = useState(false)
 
     return (
         <div ref={pageRef} className="p-4 sm:p-6 max-w-6xl mx-auto">
-            {!selectedSchool && !showYayasan && (
+            {!selectedSchool && (
                 <PageHeader
                     title="Manajemen Pengguna"
                     description="Pilih sekolah untuk melihat dan mengelola pengguna"
@@ -471,13 +355,10 @@ export default function ManajemenPengguna() {
                 />
             )}
 
-            {!selectedSchool && !showYayasan ? (
+            {!selectedSchool ? (
                 <SekolahListView 
                     onSelect={s => setSelectedSchool(s)} 
-                    onSelectYayasan={() => setShowYayasan(true)}
                 />
-            ) : showYayasan ? (
-                <YayasanUsersView onBack={() => setShowYayasan(false)} />
             ) : (
                 <UsersOfSchoolView sekolah={selectedSchool} onBack={() => setSelectedSchool(null)} />
             )}

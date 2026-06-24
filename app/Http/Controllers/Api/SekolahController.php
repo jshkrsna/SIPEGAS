@@ -89,6 +89,7 @@ class SekolahController extends Controller
             'no_telp'      => 'nullable|string|max:20',
             'yayasan_id'   => 'nullable|exists:yayasan,id',
             'logo_base64'  => 'nullable|string',
+            'jumlah_hari_kerja' => 'nullable|in:5,6',
         ], [
             'kode_sekolah.unique' => 'Kode sekolah sudah digunakan.',
         ]);
@@ -120,6 +121,7 @@ class SekolahController extends Controller
             'no_telp'      => $request->no_telp,
             'logo_url'     => $logoUrl,
             'is_active'    => 1,
+            'jumlah_hari_kerja' => $request->jumlah_hari_kerja ?? 5,
         ]);
 
         return response()->json([
@@ -152,9 +154,10 @@ class SekolahController extends Controller
             'is_active'    => 'sometimes|boolean',
             'yayasan_id'   => 'nullable|exists:yayasan,id',
             'logo_base64'  => 'nullable|string',
+            'jumlah_hari_kerja' => 'sometimes|in:5,6',
         ]);
 
-        $updateData = $request->only(['nama_sekolah', 'kode_sekolah', 'alamat', 'no_telp', 'is_active', 'yayasan_id']);
+        $updateData = $request->only(['nama_sekolah', 'kode_sekolah', 'alamat', 'no_telp', 'is_active', 'yayasan_id', 'jumlah_hari_kerja']);
 
         if ($request->filled('logo_base64')) {
             $imageData = $request->logo_base64;

@@ -22,6 +22,7 @@ function SekolahFormModal({ editData, yayasanList, onClose, onSaved }) {
         no_telp:      editData?.no_telp      || '',
         yayasan_id:   editData?.yayasan?.id  || editData?.yayasan_id || '',
         is_active:    editData?.is_active !== undefined ? editData.is_active : true,
+        jumlah_hari_kerja: editData?.jumlah_hari_kerja || 5,
         logo_base64:  '',
     })
     const [logoPreview, setLogoPreview] = useState(editData?.logo_url || null)
@@ -109,6 +110,14 @@ function SekolahFormModal({ editData, yayasanList, onClose, onSaved }) {
                             <input type="text" value={form.no_telp}
                                 onChange={e => setForm(f => ({ ...f, no_telp: e.target.value }))}
                                 className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                        </div>
+                        <div>
+                            <label className="block text-slate-400 text-xs uppercase tracking-wide mb-1.5">Jumlah Hari Kerja <span className="text-red-400">*</span></label>
+                            <select value={form.jumlah_hari_kerja} onChange={e => setForm(f => ({ ...f, jumlah_hari_kerja: parseInt(e.target.value) }))}
+                                className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                                <option value={5}>5 Hari Kerja (Senin - Jumat)</option>
+                                <option value={6}>6 Hari Kerja (Senin - Sabtu)</option>
+                            </select>
                         </div>
                         <div className="sm:col-span-2">
                             <label className="block text-slate-400 text-xs uppercase tracking-wide mb-1.5">Alamat</label>

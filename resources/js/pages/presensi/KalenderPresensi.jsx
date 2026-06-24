@@ -96,21 +96,31 @@ export default function KalenderPresensi() {
                             const isWeekend = dayjs().year(year).month(month).date(day).day() % 6 === 0
                             const hariLibur = liburMap[day]
 
+                            let bgColorClass = 'bg-slate-800/50'
+                            let textClass = 'text-slate-300'
+                            let customStyle = {}
+
+                            if (presensi) {
+                                customStyle = { backgroundColor: STATUS_COLOR[presensi.status_kehadiran] }
+                                textClass = 'text-white drop-shadow-sm'
+                            } else if (hariLibur || isWeekend) {
+                                bgColorClass = 'bg-red-500/10'
+                                textClass = hariLibur ? 'text-red-400' : 'text-red-400/70'
+                            }
+
                             return (
                                 <div key={day}
                                     className={`relative aspect-square rounded-lg flex flex-col items-center justify-center p-1 text-xs transition-all
-                                        ${isToday ? 'ring-2 ring-blue-500' : ''}
-                                        ${presensi ? 'cursor-pointer hover:opacity-80' : (hariLibur || isWeekend) ? 'bg-red-500/10' : 'bg-slate-800/50'}
+                                        ${isToday ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 z-10' : ''}
+                                        ${presensi ? 'cursor-pointer hover:brightness-110 shadow-md' : ''}
+                                        ${!presensi ? bgColorClass : ''}
                                     `}
-                                    style={presensi ? { backgroundColor: STATUS_COLOR[presensi.status_kehadiran] + '33' } : {}}
+                                    style={customStyle}
                                     title={presensi ? `${presensi.status_kehadiran}${presensi.waktu_checkin ? ` · Masuk ${dayjs(presensi.waktu_checkin).format('HH:mm')}` : ''}` : hariLibur ? hariLibur.nama_libur : ''}
                                 >
-                                    <span className={`font-medium ${isToday ? 'text-blue-400' : hariLibur ? 'text-red-400' : isWeekend ? 'text-red-400/70' : 'text-slate-300'}`}>{day}</span>
-                                    {presensi && (
-                                        <div className="w-2 h-2 rounded-full mt-0.5" style={{ backgroundColor: STATUS_COLOR[presensi.status_kehadiran] }} />
-                                    )}
+                                    <span className={`font-semibold text-sm ${textClass}`}>{day}</span>
                                     {!presensi && hariLibur && (
-                                        <div className="w-1.5 h-1.5 rounded-full mt-0.5 bg-red-500" title={hariLibur.nama_libur} />
+                                        <div className="absolute bottom-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
                                     )}
                                 </div>
                             )

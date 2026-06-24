@@ -158,6 +158,7 @@ class AuthController extends Controller
                 'id'          => $p->sekolah?->id,
                 'nama_sekolah' => $p->sekolah?->nama_sekolah,
                 'logo_url'    => $p->sekolah?->logo_url,
+                'jumlah_hari_kerja' => $p->sekolah?->jumlah_hari_kerja ?? 5,
             ] : null,
             'jabatan'        => $p->relationLoaded('jabatan') ? [
                 'id'          => $p->jabatan?->id,
